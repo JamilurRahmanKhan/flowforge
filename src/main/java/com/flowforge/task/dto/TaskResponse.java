@@ -16,9 +16,11 @@ public class TaskResponse {
     private LocalDate dueDate;
     private UUID createdBy;
     private Instant createdAt;
+    private UUID assigneeId;
 
     public TaskResponse(UUID id, UUID tenantId, UUID projectId, String title, String description,
-                        String status, String priority, LocalDate dueDate, UUID createdBy, Instant createdAt) {
+                        String status, String priority, LocalDate dueDate, UUID createdBy,
+                        Instant createdAt, UUID assigneeId) {
         this.id = id;
         this.tenantId = tenantId;
         this.projectId = projectId;
@@ -29,6 +31,7 @@ public class TaskResponse {
         this.dueDate = dueDate;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
+        this.assigneeId = assigneeId;
     }
 
     public UUID getId() {
@@ -69,5 +72,9 @@ public class TaskResponse {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public UUID getAssigneeId() {
+        return assigneeId;
     }
 }

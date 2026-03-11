@@ -1,6 +1,7 @@
 package com.flowforge.task.controller;
 
 import com.flowforge.security.CustomUserPrincipal;
+import com.flowforge.task.dto.AssignTaskRequest;
 import com.flowforge.task.dto.CreateTaskRequest;
 import com.flowforge.task.dto.TaskResponse;
 import com.flowforge.task.dto.UpdateTaskRequest;
@@ -39,6 +40,12 @@ public class TaskController {
         return taskService.getTasksByProject(projectId, principal);
     }
 
+    @GetMapping("/my")
+    public List<TaskResponse> getMyTasks(Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return taskService.getMyTasks(principal);
+    }
+
     @GetMapping("/{id}")
     public TaskResponse getTaskById(@PathVariable UUID id,
                                     Authentication authentication) {
@@ -60,5 +67,13 @@ public class TaskController {
                                          Authentication authentication) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return taskService.updateTaskStatus(id, request, principal);
+    }
+
+    @PatchMapping("/{id}/assign")
+    public TaskResponse assignTask(@PathVariable UUID id,
+                                   @Valid @RequestBody AssignTaskRequest request,
+                                   Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return taskService.assignTask(id, request.getAssigneeId(), principal);
     }
 }

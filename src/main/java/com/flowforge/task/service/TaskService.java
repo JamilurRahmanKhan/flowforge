@@ -97,6 +97,28 @@ public class TaskService {
         return toResponse(task);
     }
 
+    public TaskResponse assignTask(UUID taskId, UUID assigneeId, CustomUserPrincipal principal) {
+        Task task = taskRepository.findByIdAndTenantId(taskId, principal.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Task not found in this workspace"));
+
+        task.setAssigneeId(assigneeId);
+
+        task = taskRepository.save(task);
+
+        return toResponse(task);
+    }
+
+    public List<TaskResponse> getMyTasks(CustomUserPrincipal principal) {
+        return taskRepository
+                .findByTenantIdAndAssigneeIdOrderByCreatedAtDesc(
+                        principal.getTenantId(),
+                        principal.getUserId()
+                )
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     private TaskResponse toResponse(Task task) {
         return new TaskResponse(
                 task.getId(),
@@ -108,7 +130,8 @@ public class TaskService {
                 task.getPriority(),
                 task.getDueDate(),
                 task.getCreatedBy(),
-                task.getCreatedAt()
+                task.getCreatedAt(),
+                task.getAssigneeId()
         );
     }
 }

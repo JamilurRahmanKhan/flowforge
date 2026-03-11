@@ -46,4 +46,7 @@ public class Task {
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    @Column(name = "assignee_id")
+    private UUID assigneeId;
 }
