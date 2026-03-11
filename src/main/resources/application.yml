@@ -20,6 +20,8 @@ spring:
         web-allow-others: false
       enabled: true
       path: /h2-console
+  profiles:
+    active: dev
 
 logging:
   level:
