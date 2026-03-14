@@ -11,6 +11,10 @@ public class UpdateProjectRequest {
 
     private String status;
 
+    private String visibility;
+
+    private String defaultWorkflow;
+
     public String getName() {
         return name;
     }
@@ -33,5 +37,21 @@ public class UpdateProjectRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
+    public String getDefaultWorkflow() {
+        return defaultWorkflow;
+    }
+
+    public void setDefaultWorkflow(String defaultWorkflow) {
+        this.defaultWorkflow = defaultWorkflow;
     }
 }

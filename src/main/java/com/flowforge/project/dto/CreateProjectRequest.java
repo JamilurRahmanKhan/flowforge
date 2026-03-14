@@ -14,6 +14,12 @@ public class CreateProjectRequest {
 
     private String description;
 
+    @NotBlank
+    private String visibility;
+
+    @NotBlank
+    private String defaultWorkflow;
+
     public String getName() {
         return name;
     }
@@ -36,5 +42,21 @@ public class CreateProjectRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
+    public String getDefaultWorkflow() {
+        return defaultWorkflow;
+    }
+
+    public void setDefaultWorkflow(String defaultWorkflow) {
+        this.defaultWorkflow = defaultWorkflow;
     }
 }

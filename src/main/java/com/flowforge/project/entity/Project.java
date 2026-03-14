@@ -34,9 +34,15 @@ public class Project {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
+    private String visibility;
+
+    @Column(name = "default_workflow", nullable = false)
+    private String defaultWorkflow;
+
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 }

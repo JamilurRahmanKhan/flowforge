@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -55,5 +56,20 @@ public class ProjectController {
     public ProjectResponse archiveProject(@PathVariable UUID id, Authentication authentication) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return projectService.archiveProject(id, principal);
+    }
+
+    @PatchMapping("/{id}/unarchive")
+    public ProjectResponse unarchiveProject(@PathVariable UUID id,
+                                            Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return projectService.unarchiveProject(id, principal);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProject(@PathVariable UUID id,
+                              Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        projectService.deleteProject(id, principal);
     }
 }

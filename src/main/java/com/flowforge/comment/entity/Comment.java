@@ -31,6 +31,6 @@ public class Comment {
     @Column(nullable = false, length = 3000)
     private String content;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 }

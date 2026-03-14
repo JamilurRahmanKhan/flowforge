@@ -1,4 +1,5 @@
 package com.flowforge.comment.service;
+import com.flowforge.task.repository.TaskRepository;
 
 import com.flowforge.comment.dto.CommentResponse;
 import com.flowforge.comment.dto.CreateCommentRequest;
@@ -6,7 +7,6 @@ import com.flowforge.comment.entity.Comment;
 import com.flowforge.comment.repository.CommentRepository;
 import com.flowforge.common.exception.BadRequestException;
 import com.flowforge.security.CustomUserPrincipal;
-import com.flowforge.task.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;

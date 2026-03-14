@@ -11,17 +11,22 @@ public class ProjectResponse {
     private String key;
     private String description;
     private String status;
+    private String visibility;
+    private String defaultWorkflow;
     private UUID createdBy;
     private Instant createdAt;
 
     public ProjectResponse(UUID id, UUID tenantId, String name, String key, String description,
-                           String status, UUID createdBy, Instant createdAt) {
+                           String status, String visibility, String defaultWorkflow,
+                           UUID createdBy, Instant createdAt) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
         this.key = key;
         this.description = description;
         this.status = status;
+        this.visibility = visibility;
+        this.defaultWorkflow = defaultWorkflow;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
     }
@@ -48,6 +53,14 @@ public class ProjectResponse {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public String getDefaultWorkflow() {
+        return defaultWorkflow;
     }
 
     public UUID getCreatedBy() {

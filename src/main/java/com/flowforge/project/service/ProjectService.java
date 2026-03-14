@@ -36,12 +36,13 @@ public class ProjectService {
                 .key(normalizedKey)
                 .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .status("ACTIVE")
+                .visibility(request.getVisibility().trim().toUpperCase(Locale.ROOT))
+                .defaultWorkflow(request.getDefaultWorkflow().trim())
                 .createdBy(principal.getUserId())
                 .createdAt(Instant.now())
                 .build();
 
         project = projectRepository.save(project);
-
         return toResponse(project);
     }
 
@@ -70,6 +71,14 @@ public class ProjectService {
             project.setStatus(request.getStatus().trim().toUpperCase(Locale.ROOT));
         }
 
+        if (request.getVisibility() != null && !request.getVisibility().isBlank()) {
+            project.setVisibility(request.getVisibility().trim().toUpperCase(Locale.ROOT));
+        }
+
+        if (request.getDefaultWorkflow() != null && !request.getDefaultWorkflow().isBlank()) {
+            project.setDefaultWorkflow(request.getDefaultWorkflow().trim());
+        }
+
         project = projectRepository.save(project);
         return toResponse(project);
     }
@@ -84,6 +93,23 @@ public class ProjectService {
         return toResponse(project);
     }
 
+    public ProjectResponse unarchiveProject(UUID projectId, CustomUserPrincipal principal) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+
+        project.setStatus("ACTIVE");
+        project = projectRepository.save(project);
+
+        return toResponse(project);
+    }
+
+    public void deleteProject(UUID projectId, CustomUserPrincipal principal) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+
+        projectRepository.delete(project);
+    }
+
     private ProjectResponse toResponse(Project project) {
         return new ProjectResponse(
                 project.getId(),
@@ -92,6 +118,8 @@ public class ProjectService {
                 project.getKey(),
                 project.getDescription(),
                 project.getStatus(),
+                project.getVisibility(),
+                project.getDefaultWorkflow(),
                 project.getCreatedBy(),
                 project.getCreatedAt()
         );

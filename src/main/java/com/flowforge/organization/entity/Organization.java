@@ -25,6 +25,6 @@ public class Organization {
     @Column(nullable = false, unique = true)
     private String slug;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 }

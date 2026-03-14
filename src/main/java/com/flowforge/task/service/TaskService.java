@@ -9,8 +9,8 @@ import com.flowforge.task.dto.TaskResponse;
 import com.flowforge.task.dto.UpdateTaskRequest;
 import com.flowforge.task.dto.UpdateTaskStatusRequest;
 import com.flowforge.task.entity.Task;
-import com.flowforge.task.repository.TaskRepository;
 import org.springframework.stereotype.Service;
+import com.flowforge.task.repository.TaskRepository;
 
 import java.time.Instant;
 import java.util.List;

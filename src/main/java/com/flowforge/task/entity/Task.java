@@ -44,7 +44,7 @@ public class Task {
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "assignee_id")
