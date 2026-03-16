@@ -2,19 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Project } from "@/features/projects/types";
 import {
   archiveProject,
   deleteProject,
   getProjectById,
   unarchiveProject,
 } from "@/features/projects/api";
+import type { Project } from "@/features/projects/types";
+import { getTasksByProject } from "@/features/tasks/api";
+import type { Task } from "@/features/tasks/types";
 import ProjectDetailsShell from "./ProjectDetailsShell";
 import ProjectOverviewDesktop from "./ProjectOverviewDesktop";
 import ProjectOverviewMobile from "./ProjectOverviewMobile";
+import ProjectBoardDesktop from "./ProjectBoardDesktop";
+import ProjectBoardMobile from "./ProjectBoardMobile";
 import EditProjectModal from "./EditProjectModal";
 import ArchiveProjectModal from "./ArchiveProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
+import CreateTaskModal from "./CreateTaskModal";
 import ProjectToasts, { type ProjectToast } from "./ProjectToasts";
 
 type TabKey = "overview" | "board" | "list" | "members" | "activity";
@@ -24,12 +29,14 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   const toastIdRef = useRef(1);
 
   const [project, setProject] = useState<Project | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [openEdit, setOpenEdit] = useState(false);
   const [openArchive, setOpenArchive] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openCreateTask, setOpenCreateTask] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toasts, setToasts] = useState<ProjectToast[]>([]);
@@ -47,7 +54,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }
 
-  async function loadProject() {
+  async function loadTasksOnly(projectId: string) {
+    const taskData = await getTasksByProject(projectId);
+    setTasks(taskData);
+  }
+
+  async function loadProjectDetails() {
     try {
       setLoading(true);
       setError("");
@@ -62,8 +74,10 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         return;
       }
 
-      const data = await getProjectById(id);
-      setProject(data);
+      const projectData = await getProjectById(id);
+      setProject(projectData);
+
+      await loadTasksOnly(id);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load project";
@@ -88,7 +102,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   }
 
   useEffect(() => {
-    loadProject();
+    loadProjectDetails();
   }, [id]);
 
   async function handleArchiveConfirm() {
@@ -151,16 +165,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
     try {
       setDeleteLoading(true);
-      const deletedProjectName = project.name;
-
       await deleteProject(project.id);
-
-      pushToast({
-        type: "success",
-        title: "Project deleted",
-        description: `${deletedProjectName} was deleted successfully.`,
-      });
-
       router.push("/projects");
     } catch (err) {
       const message =
@@ -203,11 +208,28 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <>
         <ProjectOverviewMobile
           project={project}
+          tasks={tasks}
           onEdit={() => setOpenEdit(true)}
+          onCreateTask={() => setOpenCreateTask(true)}
         />
         <ProjectOverviewDesktop
           project={project}
+          tasks={tasks}
           onEdit={() => setOpenEdit(true)}
+          onCreateTask={() => setOpenCreateTask(true)}
+        />
+      </>
+    );
+  } else if (activeTab === "board") {
+    content = (
+      <>
+        <ProjectBoardMobile
+          tasks={tasks}
+          onCreateTask={() => setOpenCreateTask(true)}
+        />
+        <ProjectBoardDesktop
+          tasks={tasks}
+          onCreateTask={() => setOpenCreateTask(true)}
         />
       </>
     );
@@ -272,6 +294,27 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         loading={deleteLoading}
         onClose={() => setOpenDelete(false)}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <CreateTaskModal
+        open={openCreateTask}
+        projectId={project.id}
+        onClose={() => setOpenCreateTask(false)}
+        onCreated={async () => {
+          await loadTasksOnly(project.id);
+          pushToast({
+            type: "success",
+            title: "Task created",
+            description: "The new task was added to this project.",
+          });
+        }}
+        onError={(message) => {
+          pushToast({
+            type: "error",
+            title: "Task creation failed",
+            description: message,
+          });
+        }}
       />
 
       <ProjectToasts toasts={toasts} onRemove={removeToast} />

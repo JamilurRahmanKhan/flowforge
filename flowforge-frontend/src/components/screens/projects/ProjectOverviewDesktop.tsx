@@ -1,10 +1,13 @@
 "use client";
 
 import type { Project } from "@/features/projects/types";
+import type { Task } from "@/features/tasks/types";
 
 type Props = {
   project: Project;
+  tasks: Task[];
   onEdit: () => void;
+  onCreateTask: () => void;
 };
 
 function StatCard({
@@ -23,12 +26,11 @@ function StatCard({
   return (
     <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-start justify-between">
-        <div className={`flex size-10 items-center justify-center rounded-lg ${iconBg}`}>
+        <div
+          className={`flex size-10 items-center justify-center rounded-lg ${iconBg}`}
+        >
           <span className={`text-lg font-bold ${colorClass}`}>●</span>
         </div>
-        <span className="flex items-center gap-1 text-sm font-bold text-emerald-500">
-          +5%
-        </span>
       </div>
 
       <h3 className="mb-1 text-sm font-semibold text-slate-500">{title}</h3>
@@ -38,17 +40,13 @@ function StatCard({
   );
 }
 
-function RecentTaskRow({
-  title,
-  assignee,
-  badge,
-  badgeClass,
-}: {
-  title: string;
-  assignee: string;
-  badge: string;
-  badgeClass: string;
-}) {
+function statusBadgeClass(status: string) {
+  if (status === "DONE") return "bg-emerald-100 text-emerald-600";
+  if (status === "IN_PROGRESS") return "bg-amber-100 text-amber-600";
+  return "bg-slate-100 text-slate-600";
+}
+
+function RecentTaskRow({ task }: { task: Task }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 shadow-sm">
       <div className="flex size-10 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-400">
@@ -56,12 +54,20 @@ function RecentTaskRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900">{title}</p>
-        <p className="text-xs text-slate-500">Assigned to: {assignee}</p>
+        <p className="truncate text-sm font-semibold text-slate-900">
+          {task.title}
+        </p>
+        <p className="text-xs text-slate-500">
+          Priority: {task.priority || "N/A"}
+        </p>
       </div>
 
-      <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-tight ${badgeClass}`}>
-        {badge}
+      <span
+        className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-tight ${statusBadgeClass(
+          task.status
+        )}`}
+      >
+        {task.status}
       </span>
     </div>
   );
@@ -69,44 +75,69 @@ function RecentTaskRow({
 
 function CheckIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
       <path d="M16.707 5.293a1 1 0 010 1.414l-7.2 7.2a1 1 0 01-1.414 0l-3.2-3.2a1 1 0 111.414-1.414L8.8 11.786l6.493-6.493a1 1 0 011.414 0z" />
     </svg>
   );
 }
 
-export default function ProjectOverviewDesktop({ project, onEdit }: Props) {
+export default function ProjectOverviewDesktop({
+  project,
+  tasks,
+  onEdit,
+  onCreateTask,
+}: Props) {
+  const totalTasks = tasks.length;
+  const todoCount = tasks.filter((task) => task.status === "TODO").length;
+  const inProgressCount = tasks.filter(
+    (task) => task.status === "IN_PROGRESS"
+  ).length;
+  const doneCount = tasks.filter((task) => task.status === "DONE").length;
+
+  const recentTasks = [...tasks]
+    .sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 5);
+
   return (
     <div className="hidden lg:block">
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 grid grid-cols-4 gap-6">
           <StatCard
-            title="Completion"
-            value="68%"
-            subtitle="Project delivery rate"
+            title="Total Tasks"
+            value={String(totalTasks)}
+            subtitle="All project tasks"
             colorClass="text-blue-600"
             iconBg="bg-blue-50"
           />
           <StatCard
-            title="Tasks Done"
-            value="42/60"
+            title="To Do"
+            value={String(todoCount)}
+            subtitle="Pending work"
+            colorClass="text-slate-600"
+            iconBg="bg-slate-50"
+          />
+          <StatCard
+            title="In Progress"
+            value={String(inProgressCount)}
+            subtitle="Currently active"
+            colorClass="text-amber-600"
+            iconBg="bg-amber-50"
+          />
+          <StatCard
+            title="Done"
+            value={String(doneCount)}
             subtitle="Completed tasks"
             colorClass="text-emerald-600"
             iconBg="bg-emerald-50"
-          />
-          <StatCard
-            title="Team Members"
-            value="12"
-            subtitle="Assigned members"
-            colorClass="text-indigo-600"
-            iconBg="bg-indigo-50"
-          />
-          <StatCard
-            title="Timeline"
-            value="18d"
-            subtitle="Estimated remaining"
-            colorClass="text-rose-600"
-            iconBg="bg-rose-50"
           />
         </div>
 
@@ -135,31 +166,29 @@ export default function ProjectOverviewDesktop({ project, onEdit }: Props) {
 
           <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">Recent Tasks</h3>
-              <button className="rounded-full bg-[#1f68f9] px-4 py-2 text-sm font-bold text-white">
+              <h3 className="text-lg font-bold text-slate-900">
+                Recent Tasks
+              </h3>
+
+              <button
+                type="button"
+                onClick={onCreateTask}
+                className="rounded-full bg-[#1f68f9] px-4 py-2 text-sm font-bold text-white"
+              >
                 + New Task
               </button>
             </div>
 
             <div className="space-y-3">
-              <RecentTaskRow
-                title="Design System Audit"
-                assignee="Alex M."
-                badge="Active"
-                badgeClass="bg-amber-100 text-amber-600"
-              />
-              <RecentTaskRow
-                title="API Authentication Layer"
-                assignee="Sarah K."
-                badge="Review"
-                badgeClass="bg-purple-100 text-purple-600"
-              />
-              <RecentTaskRow
-                title="Dashboard Layout Polish"
-                assignee="Jordan L."
-                badge="Done"
-                badgeClass="bg-emerald-100 text-emerald-600"
-              />
+              {recentTasks.length > 0 ? (
+                recentTasks.map((task) => (
+                  <RecentTaskRow key={task.id} task={task} />
+                ))
+              ) : (
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                  No tasks found for this project yet.
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -220,37 +249,27 @@ export default function ProjectOverviewDesktop({ project, onEdit }: Props) {
 
           <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-400">
-              Recent Activity
+              Task Summary
             </h3>
 
-            <div className="relative space-y-6 pl-6 before:absolute before:bottom-2 before:left-[11px] before:top-2 before:w-[2px] before:bg-slate-100">
-              <div className="relative">
-                <div className="absolute -left-[19px] top-1 size-[10px] rounded-full bg-[#1f68f9] ring-4 ring-white" />
-                <p className="text-sm font-medium text-slate-700">
-                  <span className="font-bold">Jordan L.</span> moved{" "}
-                  <span className="font-bold text-[#1f68f9]">FF-124</span> to{" "}
-                  <span className="font-bold text-slate-900">Done</span>
-                </p>
-                <p className="mt-1 text-xs text-slate-400">15 mins ago</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Total</span>
+                <span className="font-bold text-slate-900">{totalTasks}</span>
               </div>
-
-              <div className="relative">
-                <div className="absolute -left-[19px] top-1 size-[10px] rounded-full bg-slate-300 ring-4 ring-white" />
-                <p className="text-sm font-medium text-slate-700">
-                  <span className="font-bold">System</span> assigned{" "}
-                  <span className="font-bold">FF-125</span> to{" "}
-                  <span className="font-bold">Alex M.</span>
-                </p>
-                <p className="mt-1 text-xs text-slate-400">1 hour ago</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">TODO</span>
+                <span className="font-bold text-slate-900">{todoCount}</span>
               </div>
-
-              <div className="relative">
-                <div className="absolute -left-[19px] top-1 size-[10px] rounded-full bg-slate-300 ring-4 ring-white" />
-                <p className="text-sm font-medium text-slate-700">
-                  <span className="font-bold">Sarah K.</span> updated project
-                  workflow settings
-                </p>
-                <p className="mt-1 text-xs text-slate-400">Yesterday</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">IN PROGRESS</span>
+                <span className="font-bold text-slate-900">
+                  {inProgressCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">DONE</span>
+                <span className="font-bold text-slate-900">{doneCount}</span>
               </div>
             </div>
           </section>
