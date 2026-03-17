@@ -8,20 +8,22 @@ type Props = {
   tasks: Task[];
   onCreateTask: () => void;
   onStatusChanged: () => Promise<void>;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 };
 
 function statusBadgeClass(status: string) {
-  if (status === "DONE") return "bg-emerald-100 text-emerald-600";
-  if (status === "IN_PROGRESS") return "bg-amber-100 text-amber-600";
-  return "bg-slate-100 text-slate-600";
+  if (status === "DONE") return "bg-emerald-100 text-emerald-700";
+  if (status === "IN_PROGRESS") return "bg-amber-100 text-amber-700";
+  return "bg-slate-100 text-slate-700";
 }
 
 function priorityBadgeClass(priority: string) {
   const value = priority?.toUpperCase?.() || "";
 
-  if (value === "HIGH" || value === "URGENT") return "bg-rose-100 text-rose-600";
-  if (value === "MEDIUM") return "bg-amber-100 text-amber-600";
-  return "bg-slate-100 text-slate-600";
+  if (value === "URGENT" || value === "HIGH") return "bg-rose-100 text-rose-700";
+  if (value === "MEDIUM") return "bg-amber-100 text-amber-700";
+  return "bg-slate-100 text-slate-700";
 }
 
 function formatDueDate(dueDate?: string | null) {
@@ -43,7 +45,7 @@ function actionLabel(status: string) {
   return "Reset";
 }
 
-function StatusAction({
+function StatusButton({
   task,
   onStatusChanged,
 }: {
@@ -78,6 +80,8 @@ export default function ProjectListTabDesktop({
   tasks,
   onCreateTask,
   onStatusChanged,
+  onEditTask,
+  onDeleteTask,
 }: Props) {
   const sortedTasks = [...tasks].sort((a, b) => {
     const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -87,57 +91,61 @@ export default function ProjectListTabDesktop({
 
   return (
     <div className="hidden lg:block">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-[24px] font-extrabold tracking-tight text-slate-900">
             Task List
           </h2>
           <p className="mt-1 text-[14px] text-slate-500">
-            All tasks inside this project.
+            All tasks in this project
           </p>
         </div>
 
         <button
           type="button"
           onClick={onCreateTask}
-          className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_16px_30px_rgba(37,99,235,0.24)]"
+          className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_16px_30px_rgba(37,99,235,0.20)]"
         >
           + Add Task
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[1.6fr_0.7fr_0.7fr_0.8fr_0.7fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4">
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+      <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
+        <div className="grid grid-cols-[2fr_0.9fr_0.9fr_1fr_1.4fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
             Task
-          </p>
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+          </div>
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
             Status
-          </p>
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+          </div>
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
             Priority
-          </p>
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+          </div>
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
             Due Date
-          </p>
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
-            Action
-          </p>
+          </div>
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+            Actions
+          </div>
         </div>
 
-        {sortedTasks.length > 0 ? (
+        {sortedTasks.length === 0 ? (
+          <div className="px-6 py-14 text-center text-[14px] font-medium text-slate-400">
+            No tasks found for this project yet.
+          </div>
+        ) : (
           sortedTasks.map((task) => (
             <div
               key={task.id}
-              className="grid grid-cols-[1.6fr_0.7fr_0.7fr_0.8fr_0.7fr] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
+              className="grid grid-cols-[2fr_0.9fr_0.9fr_1fr_1.4fr] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
             >
               <div className="min-w-0">
-                <p className="truncate text-[15px] font-bold text-slate-900">
+                <div className="truncate text-[15px] font-bold text-slate-900">
                   {task.title}
-                </p>
-                <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-slate-500">
+                </div>
+                <div className="mt-1 line-clamp-2 text-[13px] leading-6 text-slate-500">
                   {task.description || "No description provided for this task."}
-                </p>
+                </div>
               </div>
 
               <div className="flex items-start">
@@ -164,15 +172,25 @@ export default function ProjectListTabDesktop({
                 {formatDueDate(task.dueDate)}
               </div>
 
-              <div>
-                <StatusAction task={task} onStatusChanged={onStatusChanged} />
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusButton task={task} onStatusChanged={onStatusChanged} />
+                <button
+                  type="button"
+                  onClick={() => onEditTask(task)}
+                  className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-extrabold text-slate-600"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteTask(task)}
+                  className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))
-        ) : (
-          <div className="px-6 py-12 text-center text-[14px] font-medium text-slate-400">
-            No tasks found for this project yet.
-          </div>
         )}
       </div>
     </div>

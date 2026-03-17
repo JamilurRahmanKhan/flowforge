@@ -8,6 +8,8 @@ type Props = {
   tasks: Task[];
   onCreateTask: () => void;
   onStatusChanged: () => Promise<void>;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 };
 
 function groupTasks(tasks: Task[]) {
@@ -54,9 +56,13 @@ function actionLabel(status: string) {
 function MobileTaskCard({
   task,
   onStatusChanged,
+  onEditTask,
+  onDeleteTask,
 }: {
   task: Task;
   onStatusChanged: () => Promise<void>;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -104,6 +110,23 @@ function MobileTaskCard({
           {loading ? "..." : actionLabel(task.status)}
         </button>
       </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onEditTask(task)}
+          className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-extrabold text-slate-600"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeleteTask(task)}
+          className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
@@ -112,10 +135,14 @@ function Section({
   status,
   tasks,
   onStatusChanged,
+  onEditTask,
+  onDeleteTask,
 }: {
   status: "TODO" | "IN_PROGRESS" | "DONE";
   tasks: Task[];
   onStatusChanged: () => Promise<void>;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }) {
   const label = labelFor(status);
 
@@ -133,7 +160,13 @@ function Section({
       <div className="space-y-3">
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            <MobileTaskCard key={task.id} task={task} onStatusChanged={onStatusChanged} />
+            <MobileTaskCard
+              key={task.id}
+              task={task}
+              onStatusChanged={onStatusChanged}
+              onEditTask={onEditTask}
+              onDeleteTask={onDeleteTask}
+            />
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-[12px] font-medium text-slate-400">
@@ -149,6 +182,8 @@ export default function ProjectBoardMobile({
   tasks,
   onCreateTask,
   onStatusChanged,
+  onEditTask,
+  onDeleteTask,
 }: Props) {
   const grouped = groupTasks(tasks);
 
@@ -168,13 +203,27 @@ export default function ProjectBoardMobile({
         </button>
       </div>
 
-      <Section status="TODO" tasks={grouped.TODO} onStatusChanged={onStatusChanged} />
+      <Section
+        status="TODO"
+        tasks={grouped.TODO}
+        onStatusChanged={onStatusChanged}
+        onEditTask={onEditTask}
+        onDeleteTask={onDeleteTask}
+      />
       <Section
         status="IN_PROGRESS"
         tasks={grouped.IN_PROGRESS}
         onStatusChanged={onStatusChanged}
+        onEditTask={onEditTask}
+        onDeleteTask={onDeleteTask}
       />
-      <Section status="DONE" tasks={grouped.DONE} onStatusChanged={onStatusChanged} />
+      <Section
+        status="DONE"
+        tasks={grouped.DONE}
+        onStatusChanged={onStatusChanged}
+        onEditTask={onEditTask}
+        onDeleteTask={onDeleteTask}
+      />
     </div>
   );
 }

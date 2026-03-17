@@ -13,7 +13,6 @@ import ProjectToasts, { type ProjectToast } from "./ProjectToasts";
 export default function ProjectsListScreen() {
   const router = useRouter();
   const toastIdRef = useRef(1);
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"ACTIVE" | "ARCHIVED">("ACTIVE");
@@ -26,10 +25,7 @@ export default function ProjectsListScreen() {
   function pushToast(toast: Omit<ProjectToast, "id">) {
     const id = toastIdRef.current++;
     setToasts((prev) => [...prev, { ...toast, id }]);
-
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
+    window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }
 
   function removeToast(id: number) {
@@ -40,37 +36,21 @@ export default function ProjectsListScreen() {
     try {
       setLoading(true);
       setError("");
-
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("flowforge_token")
-          : null;
-
+      const token = typeof window !== "undefined" ? localStorage.getItem("flowforge_token") : null;
       if (!token) {
         router.replace("/login");
         return;
       }
-
-      const data = await getProjects();
-      setProjects(data);
+      setProjects(await getProjects());
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load projects";
-
+      const message = err instanceof Error ? err.message : "Failed to load projects";
       if (message === "UNAUTHORIZED") {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("flowforge_token");
-        }
+        if (typeof window !== "undefined") localStorage.removeItem("flowforge_token");
         router.replace("/login");
         return;
       }
-
       setError(message);
-      pushToast({
-        type: "error",
-        title: "Failed to load projects",
-        description: message,
-      });
+      pushToast({ type: "error", title: "Failed to load projects", description: message });
     } finally {
       setLoading(false);
     }
@@ -81,68 +61,40 @@ export default function ProjectsListScreen() {
   }, []);
 
   const normalizedSearch = search.trim().toLowerCase();
-
-  const tabProjects = useMemo(() => {
-    return projects.filter((project) =>
-      tab === "ACTIVE"
-        ? project.status === "ACTIVE"
-        : project.status === "ARCHIVED"
-    );
-  }, [projects, tab]);
-
+  const tabProjects = useMemo(
+    () => projects.filter((project) => (tab === "ACTIVE" ? project.status === "ACTIVE" : project.status === "ARCHIVED")),
+    [projects, tab]
+  );
   const searchedProjects = useMemo(() => {
     if (!normalizedSearch) return tabProjects;
-
-    return tabProjects.filter((project) => {
-      return (
-        project.name.toLowerCase().includes(normalizedSearch) ||
-        project.key.toLowerCase().includes(normalizedSearch) ||
-        (project.description || "").toLowerCase().includes(normalizedSearch)
-      );
-    });
+    return tabProjects.filter((project) =>
+      project.name.toLowerCase().includes(normalizedSearch) ||
+      project.key.toLowerCase().includes(normalizedSearch) ||
+      (project.description || "").toLowerCase().includes(normalizedSearch)
+    );
   }, [tabProjects, normalizedSearch]);
-
   const filteredProjects = useMemo(() => {
     const sorted = [...searchedProjects];
-
-    if (sortBy === "NAME_ASC") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === "NAME_DESC") {
-      sorted.sort((a, b) => b.name.localeCompare(a.name));
-    } else {
-      sorted.sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-    }
-
+    if (sortBy === "NAME_ASC") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortBy === "NAME_DESC") sorted.sort((a, b) => b.name.localeCompare(a.name));
+    else sorted.sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
     return sorted;
   }, [searchedProjects, sortBy]);
 
   const isCompletelyEmpty = !loading && !error && projects.length === 0;
   const isTabEmpty = !loading && !error && tabProjects.length === 0;
-  const isSearchEmpty =
-    !loading && !error && tabProjects.length > 0 && filteredProjects.length === 0;
+  const isSearchEmpty = !loading && !error && tabProjects.length > 0 && filteredProjects.length === 0;
 
   return (
     <>
       {loading ? (
-        <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        <div className="rounded-[32px] border border-[#e7edf6] bg-white px-6 py-16 text-center text-sm font-semibold text-slate-500 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           Loading projects...
         </div>
       ) : error ? (
-        <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-6">
-          <div className="max-w-md rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
-            {error}
-          </div>
-        </div>
+        <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">{error}</div>
       ) : isCompletelyEmpty ? (
-        <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-6">
-          <div className="w-full max-w-xl">
-            <ProjectsEmptyState onCreate={() => setOpenCreate(true)} />
-          </div>
-        </div>
+        <ProjectsEmptyState onCreate={() => setOpenCreate(true)} />
       ) : (
         <>
           <ProjectsListMobile
@@ -158,7 +110,6 @@ export default function ProjectsListScreen() {
             isTabEmpty={isTabEmpty}
             isSearchEmpty={isSearchEmpty}
           />
-
           <ProjectsListDesktop
             projects={filteredProjects}
             tab={tab}
@@ -180,19 +131,9 @@ export default function ProjectsListScreen() {
         onClose={() => setOpenCreate(false)}
         onCreated={(project) => {
           setProjects((prev) => [project, ...prev]);
-          pushToast({
-            type: "success",
-            title: "Project created successfully",
-            description: `${project.name} is now available in your workspace.`,
-          });
+          pushToast({ type: "success", title: "Project created successfully", description: `${project.name} is now available in your workspace.` });
         }}
-        onError={(message) => {
-          pushToast({
-            type: "error",
-            title: "Project creation failed",
-            description: message,
-          });
-        }}
+        onError={(message) => pushToast({ type: "error", title: "Project creation failed", description: message })}
       />
 
       <ProjectToasts toasts={toasts} onRemove={removeToast} />

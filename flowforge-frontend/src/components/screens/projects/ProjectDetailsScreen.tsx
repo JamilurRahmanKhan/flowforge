@@ -11,8 +11,11 @@ import {
 import type { Project } from "@/features/projects/types";
 import { getTasksByProject } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
-import { getWorkspaceUsers } from "@/features/users/api";
-import type { WorkspaceUser } from "@/features/users/types";
+import type { ProjectMember } from "@/features/project-members/types";
+import {
+  getAssignedProjectMembers,
+  getAvailableProjectMembers,
+} from "@/features/project-members/api";
 
 import ProjectDetailsShell from "./ProjectDetailsShell";
 import ProjectOverviewDesktop from "./ProjectOverviewDesktop";
@@ -27,6 +30,8 @@ import EditProjectModal from "./EditProjectModal";
 import ArchiveProjectModal from "./ArchiveProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
 import CreateTaskModal from "./CreateTaskModal";
+import EditTaskModal from "./EditTaskModal";
+import DeleteTaskModal from "./DeleteTaskModal";
 import ProjectToasts, { type ProjectToast } from "./ProjectToasts";
 import { buildProjectActivity } from "@/features/activity/utils";
 import ProjectActivityDesktop from "./ProjectActivityDesktop";
@@ -40,16 +45,25 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<WorkspaceUser[]>([]);
+  const [assignedMembers, setAssignedMembers] = useState<ProjectMember[]>([]);
+  const [availableMembers, setAvailableMembers] = useState<ProjectMember[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersLoaded, setMembersLoaded] = useState(false);
+  const [membersAttempted, setMembersAttempted] = useState(false);
+
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+
   const [openEdit, setOpenEdit] = useState(false);
   const [openArchive, setOpenArchive] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openCreateTask, setOpenCreateTask] = useState(false);
+
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toasts, setToasts] = useState<ProjectToast[]>([]);
@@ -78,29 +92,28 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   }
 
   async function loadMembersOnly() {
+    if (!project) return;
+
     try {
       setMembersLoading(true);
-      const usersData = await getWorkspaceUsers();
-      setMembers(usersData);
+      setMembersAttempted(true);
+
+      const [assigned, available] = await Promise.all([
+        getAssignedProjectMembers(project.id),
+        getAvailableProjectMembers(project.id),
+      ]);
+
+      setAssignedMembers(assigned);
+      setAvailableMembers(available);
       setMembersLoaded(true);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load members";
 
-      if (message === "UNAUTHORIZED") {
-        setMembers([]);
-        setMembersLoaded(false);
-        pushToast({
-          type: "error",
-          title: "Members unavailable",
-          description:
-            "Workspace members could not be loaded. The project page is still available.",
-        });
-        return;
-      }
-
-      setMembers([]);
+      setAssignedMembers([]);
+      setAvailableMembers([]);
       setMembersLoaded(false);
+
       pushToast({
         type: "error",
         title: "Failed to load members",
@@ -137,9 +150,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
           err instanceof Error ? err.message : "Failed to load tasks";
 
         if (message === "UNAUTHORIZED") {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("flowforge_token");
-          }
+          localStorage.removeItem("flowforge_token");
           router.replace("/login");
           return;
         }
@@ -156,9 +167,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         err instanceof Error ? err.message : "Failed to load project";
 
       if (message === "UNAUTHORIZED") {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("flowforge_token");
-        }
+        localStorage.removeItem("flowforge_token");
         router.replace("/login");
         return;
       }
@@ -179,10 +188,16 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
-    if (activeTab === "members" && !membersLoaded && !membersLoading) {
+    if (
+      activeTab === "members" &&
+      project &&
+      !membersLoaded &&
+      !membersLoading &&
+      !membersAttempted
+    ) {
       loadMembersOnly();
     }
-  }, [activeTab, membersLoaded, membersLoading]);
+  }, [activeTab, project, membersLoaded, membersLoading, membersAttempted]);
 
   async function handleArchiveConfirm() {
     if (!project) return;
@@ -308,11 +323,15 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
           onStatusChanged={refreshProjectTasks}
+          onEditTask={setEditingTask}
+          onDeleteTask={setDeletingTask}
         />
         <ProjectBoardDesktop
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
           onStatusChanged={refreshProjectTasks}
+          onEditTask={setEditingTask}
+          onDeleteTask={setDeletingTask}
         />
       </>
     );
@@ -323,11 +342,15 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
           onStatusChanged={refreshProjectTasks}
+          onEditTask={setEditingTask}
+          onDeleteTask={setDeletingTask}
         />
         <ProjectListTabDesktop
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
           onStatusChanged={refreshProjectTasks}
+          onEditTask={setEditingTask}
+          onDeleteTask={setDeletingTask}
         />
       </>
     );
@@ -338,8 +361,18 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       </div>
     ) : (
       <>
-        <ProjectMembersMobile members={members} />
-        <ProjectMembersDesktop members={members} />
+        <ProjectMembersMobile
+          projectId={project.id}
+          assignedMembers={assignedMembers}
+          availableMembers={availableMembers}
+          onMembersChanged={loadMembersOnly}
+        />
+        <ProjectMembersDesktop
+          projectId={project.id}
+          assignedMembers={assignedMembers}
+          availableMembers={availableMembers}
+          onMembersChanged={loadMembersOnly}
+        />
       </>
     );
   } else if (activeTab === "activity") {
@@ -362,7 +395,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <ProjectDetailsShell
         project={project}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (tab !== "members") {
+            setMembersAttempted(false);
+          }
+        }}
         onArchive={() => {
           if (project.status === "ARCHIVED") {
             handleUnarchive();
@@ -431,6 +469,20 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
             description: message,
           });
         }}
+      />
+
+      <EditTaskModal
+        open={!!editingTask}
+        task={editingTask}
+        onClose={() => setEditingTask(null)}
+        onUpdated={refreshProjectTasks}
+      />
+
+      <DeleteTaskModal
+        open={!!deletingTask}
+        task={deletingTask}
+        onClose={() => setDeletingTask(null)}
+        onDeleted={refreshProjectTasks}
       />
 
       <ProjectToasts toasts={toasts} onRemove={removeToast} />

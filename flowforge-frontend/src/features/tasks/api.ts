@@ -18,3 +18,24 @@ export async function updateTaskStatus(id: string, status: string) {
     body: JSON.stringify({ status }),
   });
 }
+
+export async function updateTask(
+  id: string,
+  payload: {
+    title?: string;
+    description?: string;
+    priority?: string;
+    dueDate?: string;
+  }
+) {
+  return apiClient<Task>(`/api/tasks/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteTask(id: string) {
+  return apiClient<void>(`/api/tasks/${id}`, {
+    method: "DELETE",
+  });
+}

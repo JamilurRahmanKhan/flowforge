@@ -1,5 +1,6 @@
 package com.flowforge.task.service;
 
+
 import com.flowforge.common.exception.BadRequestException;
 import com.flowforge.project.entity.Project;
 import com.flowforge.project.repository.ProjectRepository;
@@ -9,13 +10,11 @@ import com.flowforge.task.dto.TaskResponse;
 import com.flowforge.task.dto.UpdateTaskRequest;
 import com.flowforge.task.dto.UpdateTaskStatusRequest;
 import com.flowforge.task.entity.Task;
-import org.springframework.stereotype.Service;
 import com.flowforge.task.repository.TaskRepository;
-import com.flowforge.common.BadRequestException;
-
-import java.util.UUID;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -58,7 +57,10 @@ public class TaskService {
         projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
                 .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
 
-        return taskRepository.findByTenantIdAndProjectIdOrderByCreatedAtDesc(principal.getTenantId(), projectId)
+        return taskRepository.findByTenantIdAndProjectIdOrderByCreatedAtDesc(
+                        principal.getTenantId(),
+                        projectId
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -78,7 +80,12 @@ public class TaskService {
         task.setTitle(request.getTitle().trim());
         task.setDescription(request.getDescription() != null ? request.getDescription().trim() : null);
         task.setPriority(request.getPriority().trim().toUpperCase(Locale.ROOT));
-        task.setDueDate(request.getDueDate());
+
+        if (request.getDueDate() != null && !request.getDueDate().isBlank()) {
+            task.setDueDate(LocalDate.parse(request.getDueDate()));
+        } else {
+            task.setDueDate(null);
+        }
 
         task = taskRepository.save(task);
         return toResponse(task);
@@ -105,15 +112,13 @@ public class TaskService {
                 .orElseThrow(() -> new BadRequestException("Task not found in this workspace"));
 
         task.setAssigneeId(assigneeId);
-
         task = taskRepository.save(task);
 
         return toResponse(task);
     }
 
     public List<TaskResponse> getMyTasks(CustomUserPrincipal principal) {
-        return taskRepository
-                .findByTenantIdAndAssigneeIdOrderByCreatedAtDesc(
+        return taskRepository.findByTenantIdAndAssigneeIdOrderByCreatedAtDesc(
                         principal.getTenantId(),
                         principal.getUserId()
                 )
@@ -122,17 +127,11 @@ public class TaskService {
                 .toList();
     }
 
-    public TaskResponse updateTaskStatus(UUID taskId, UpdateTaskStatusRequest request, CustomUserPrincipal principal) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new BadRequestException("Task not found"));
+    public void deleteTask(UUID taskId, CustomUserPrincipal principal) {
+        Task task = taskRepository.findByIdAndTenantId(taskId, principal.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Task not found in this workspace"));
 
-        if (!task.getTenantId().equals(principal.getTenantId())) {
-            throw new BadRequestException("Task does not belong to your workspace");
-        }
-
-        task.setStatus(request.getStatus());
-        Task saved = taskRepository.save(task);
-        return toResponse(saved);
+        taskRepository.delete(task);
     }
 
     private TaskResponse toResponse(Task task) {

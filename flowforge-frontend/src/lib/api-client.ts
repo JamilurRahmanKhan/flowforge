@@ -10,24 +10,33 @@ export async function apiClient<T>(
       ? localStorage.getItem("flowforge_token")
       : null;
 
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+
   let response: Response;
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        Accept: "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
       cache: "no-store",
     });
   } catch {
-    throw new Error("Cannot connect to backend. Make sure Spring Boot is running on http://localhost:8080");
+    throw new Error(
+      "Cannot connect to backend. Make sure Spring Boot is running on http://localhost:8080"
+    );
   }
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("flowforge_token");
+      }
       throw new Error("UNAUTHORIZED");
     }
 

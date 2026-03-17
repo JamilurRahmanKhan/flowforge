@@ -7,14 +7,16 @@ export function saveToken(token: string) {
 }
 
 export function getToken() {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-  return null;
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function clearToken() {
   if (typeof window !== "undefined") {
     localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+export function isAuthenticated() {
+  return !!getToken();
 }

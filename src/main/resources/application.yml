@@ -2,34 +2,8 @@ server:
   port: 8080
 
 spring:
-  datasource:
-    url: jdbc:h2:file:./data/flowforge;AUTO_SERVER=TRUE;MODE=PostgreSQL
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-  h2:
-    console:
-      settings:
-        web-allow-others: false
-      enabled: true
-      path: /h2-console
   profiles:
     active: dev
-
-logging:
-  level:
-    org.hibernate.SQL: debug
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
 
 app:
   security:
@@ -37,5 +11,8 @@ app:
       issuer: flowforge
       accessTokenMinutes: 15
       refreshTokenDays: 14
-      secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32+_CHARS"
+      secret: "flowforge-dev-secret-key-flowforge-dev-secret-key-123456"
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
