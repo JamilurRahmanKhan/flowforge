@@ -21,6 +21,8 @@ public class CreateTaskRequest {
 
     private LocalDate dueDate;
 
+    private UUID assigneeId;
+
     public UUID getProjectId() {
         return projectId;
     }
@@ -59,5 +61,13 @@ public class CreateTaskRequest {
 
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
+    }
+
+    public UUID getAssigneeId() {
+        return assigneeId;
+    }
+
+    public void setAssigneeId(UUID assigneeId) {
+        this.assigneeId = assigneeId;
     }
 }

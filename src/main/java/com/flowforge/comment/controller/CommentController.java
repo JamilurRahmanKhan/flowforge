@@ -22,18 +22,22 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CommentResponse createComment(@Valid @RequestBody CreateCommentRequest request,
-                                         Authentication authentication) {
-        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-        return commentService.createComment(request, principal);
-    }
-
     @GetMapping
-    public List<CommentResponse> getCommentsByTask(@RequestParam UUID taskId,
-                                                   Authentication authentication) {
+    public List<CommentResponse> getCommentsByTask(
+            @RequestParam UUID taskId,
+            Authentication authentication
+    ) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return commentService.getCommentsByTask(taskId, principal);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentResponse createComment(
+            @Valid @RequestBody CreateCommentRequest request,
+            Authentication authentication
+    ) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return commentService.createComment(request, principal);
     }
 }

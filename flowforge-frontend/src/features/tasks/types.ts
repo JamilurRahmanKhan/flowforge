@@ -3,19 +3,11 @@ export type Task = {
   tenantId: string;
   projectId: string;
   title: string;
-  description?: string | null;
-  status: "TODO" | "IN_PROGRESS" | "DONE" | string;
+  description: string | null;
+  status: "TODO" | "IN_PROGRESS" | "DONE";
   priority: string;
-  dueDate?: string | null;
+  dueDate: string | null;
   createdBy: string;
   createdAt: string;
-  assigneeId?: string | null;
-};
-
-export type CreateTaskPayload = {
-  projectId: string;
-  title: string;
-  description?: string;
-  priority: string;
-  dueDate?: string;
+  assigneeId: string | null;
 };

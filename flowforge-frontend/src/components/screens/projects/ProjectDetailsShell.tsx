@@ -32,37 +32,38 @@ export default function ProjectDetailsShell({
       <section className="overflow-hidden rounded-[28px] border border-[#e6ebf3] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
         <div className="border-b border-[#e9eef5] px-6 py-5 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => history.back()}
-                className="rounded-full border border-[#dbe4f0] px-3 py-2 text-[13px] font-bold text-[#475569]"
-              >
-                ← Back
-              </button>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="truncate text-[30px] font-extrabold tracking-tight text-[#0f172a]">
-                    {project.name}
-                  </h1>
-                  <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-extrabold tracking-[0.14em] ${
-                      project.status === "ARCHIVED"
-                        ? "bg-slate-100 text-slate-600"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    {project.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-[14px] font-medium text-[#64748b]">
-                  {project.key}
-                </p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="truncate text-[30px] font-extrabold tracking-tight text-[#0f172a]">
+                  {project.name}
+                </h1>
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-extrabold tracking-[0.14em] ${
+                    project.status === "ARCHIVED"
+                      ? "bg-slate-100 text-slate-600"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {project.status}
+                </span>
               </div>
+              <p className="mt-1 text-[14px] font-medium text-[#64748b]">
+                {project.key}
+              </p>
+              <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#64748b]">
+                {project.description || "No project description provided yet."}
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                className="rounded-full border border-[#dbe4f0] px-4 py-2.5 text-[13px] font-extrabold text-[#334155]"
+              >
+                Back
+              </button>
+
               <button
                 type="button"
                 onClick={onArchive}

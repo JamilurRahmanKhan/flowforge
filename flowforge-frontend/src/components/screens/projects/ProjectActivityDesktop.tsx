@@ -1,88 +1,53 @@
 "use client";
 
-import type { ActivityItem } from "@/features/activity/types";
-
-type Props = {
-  activities?: ActivityItem[];
+type Activity = {
+  id: string;
+  title: string;
+  description: string;
+  timeLabel: string;
 };
 
-function iconFor(type: ActivityItem["type"]) {
-  if (type === "PROJECT_CREATED") return "🚀";
-  if (type === "PROJECT_UPDATED") return "🛠️";
-  if (type === "PROJECT_ARCHIVED") return "📦";
-  if (type === "PROJECT_ACTIVE") return "✅";
-  return "📝";
-}
-
-function bgFor(type: ActivityItem["type"]) {
-  if (type === "PROJECT_CREATED") return "bg-blue-50 text-blue-600";
-  if (type === "PROJECT_UPDATED") return "bg-amber-50 text-amber-600";
-  if (type === "PROJECT_ARCHIVED") return "bg-slate-100 text-slate-600";
-  if (type === "PROJECT_ACTIVE") return "bg-emerald-50 text-emerald-600";
-  return "bg-violet-50 text-violet-600";
-}
-
-function formatTime(timestamp: string) {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return "Unknown time";
-  return date.toLocaleString();
-}
-
-export default function ProjectActivityDesktop({ activities = [] }: Props) {
+export default function ProjectActivityDesktop({
+  activities,
+}: {
+  activities: Activity[];
+}) {
   return (
     <div className="hidden lg:block">
-      <div className="mb-5">
-        <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900">
-          Activity Timeline
+      <section className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+        <h2 className="text-[28px] font-extrabold tracking-tight text-[#0f172a]">
+          Activity
         </h2>
-        <p className="mt-1 text-[14px] text-slate-500">
-          Recent project and task events.
-        </p>
-      </div>
 
-      <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-        {activities.length > 0 ? (
-          <div className="space-y-6">
-            {activities.map((activity, index) => (
-              <div key={activity.id} className="relative flex gap-4">
-                <div className="relative z-10">
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-full text-lg ${bgFor(
-                      activity.type
-                    )}`}
-                  >
-                    <span>{iconFor(activity.type)}</span>
+        <div className="mt-6 space-y-5">
+          {activities.length > 0 ? (
+            activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="rounded-[22px] border border-[#eef2f7] bg-[#f8fafc] px-5 py-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[15px] font-extrabold text-[#0f172a]">
+                      {activity.title}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-6 text-[#64748b]">
+                      {activity.description}
+                    </p>
                   </div>
-                  {index !== activities.length - 1 && (
-                    <div className="absolute left-1/2 top-12 h-[calc(100%+12px)] w-px -translate-x-1/2 bg-slate-200" />
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1 rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-[15px] font-extrabold text-slate-900">
-                        {activity.title}
-                      </h3>
-                      <p className="mt-1 text-[14px] leading-6 text-slate-500">
-                        {activity.description}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-[12px] font-semibold text-slate-400">
-                      {formatTime(activity.timestamp)}
-                    </div>
-                  </div>
+                  <span className="text-[12px] font-bold text-[#94a3b8]">
+                    {activity.timeLabel}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-10 text-center text-[14px] font-medium text-slate-400">
-            No activity found for this project yet.
-          </div>
-        )}
-      </div>
+            ))
+          ) : (
+            <div className="rounded-[20px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-5 py-8 text-center text-[14px] font-medium text-[#94a3b8]">
+              No activity yet for this project.
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

@@ -279,7 +279,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f6f8] text-[#64748b]">
+      <div className="rounded-[28px] border border-[#e6ebf3] bg-white px-6 py-14 text-center text-[#64748b] shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
         Loading project...
       </div>
     );
@@ -287,10 +287,8 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   if (error || !project) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f6f8] px-6">
-        <div className="max-w-md rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
-          {error || "Project not found"}
-        </div>
+      <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+        {error || "Project not found"}
       </div>
     );
   }
@@ -356,7 +354,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     );
   } else if (activeTab === "members") {
     content = membersLoading ? (
-      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 shadow-sm">
+      <div className="rounded-[24px] border border-[#e6ebf3] bg-white px-6 py-10 text-center text-[#64748b] shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
         Loading members...
       </div>
     ) : (
@@ -375,18 +373,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         />
       </>
     );
-  } else if (activeTab === "activity") {
+  } else {
     content = (
       <>
         <ProjectActivityMobile activities={activities} />
         <ProjectActivityDesktop activities={activities} />
       </>
-    );
-  } else {
-    content = (
-      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 shadow-sm">
-        {activeTab} tab will be implemented in the next phase.
-      </div>
     );
   }
 

@@ -1,6 +1,5 @@
 package com.flowforge.task.service;
 
-
 import com.flowforge.common.exception.BadRequestException;
 import com.flowforge.project.entity.Project;
 import com.flowforge.project.repository.ProjectRepository;
@@ -47,6 +46,7 @@ public class TaskService {
                 .dueDate(request.getDueDate())
                 .createdBy(principal.getUserId())
                 .createdAt(Instant.now())
+                .assigneeId(request.getAssigneeId())
                 .build();
 
         task = taskRepository.save(task);
