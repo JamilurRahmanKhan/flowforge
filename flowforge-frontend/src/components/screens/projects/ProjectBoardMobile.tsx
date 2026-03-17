@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { updateTaskStatus } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
 
 type Props = {
   tasks: Task[];
   onCreateTask: () => void;
+  onStatusChanged: () => Promise<void>;
 };
 
 function groupTasks(tasks: Task[]) {
@@ -18,14 +21,8 @@ function groupTasks(tasks: Task[]) {
 function priorityClass(priority: string) {
   const value = priority?.toUpperCase?.() || "";
 
-  if (value === "HIGH" || value === "URGENT") {
-    return "bg-rose-100 text-rose-600";
-  }
-
-  if (value === "MEDIUM") {
-    return "bg-amber-100 text-amber-600";
-  }
-
+  if (value === "HIGH" || value === "URGENT") return "bg-rose-100 text-rose-600";
+  if (value === "MEDIUM") return "bg-amber-100 text-amber-600";
   return "bg-slate-100 text-slate-600";
 }
 
@@ -37,14 +34,42 @@ function labelFor(status: "TODO" | "IN_PROGRESS" | "DONE") {
 
 function formatDueDate(dueDate?: string | null) {
   if (!dueDate) return "No due date";
-
   const date = new Date(dueDate);
   if (Number.isNaN(date.getTime())) return "No due date";
-
   return date.toLocaleDateString();
 }
 
-function MobileTaskCard({ task }: { task: Task }) {
+function nextStatus(status: string) {
+  if (status === "TODO") return "IN_PROGRESS";
+  if (status === "IN_PROGRESS") return "DONE";
+  return "TODO";
+}
+
+function actionLabel(status: string) {
+  if (status === "TODO") return "Start";
+  if (status === "IN_PROGRESS") return "Done";
+  return "Reset";
+}
+
+function MobileTaskCard({
+  task,
+  onStatusChanged,
+}: {
+  task: Task;
+  onStatusChanged: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleStatusChange() {
+    try {
+      setLoading(true);
+      await updateTaskStatus(task.id, nextStatus(task.status));
+      await onStatusChanged();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -65,8 +90,19 @@ function MobileTaskCard({ task }: { task: Task }) {
         {task.description || "No description provided."}
       </p>
 
-      <div className="mt-3 text-[11px] font-semibold text-slate-400">
-        Due: {formatDueDate(task.dueDate)}
+      <div className="mt-3 flex items-center justify-between">
+        <span className="text-[11px] font-semibold text-slate-400">
+          Due: {formatDueDate(task.dueDate)}
+        </span>
+
+        <button
+          type="button"
+          onClick={handleStatusChange}
+          disabled={loading}
+          className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white disabled:opacity-60"
+        >
+          {loading ? "..." : actionLabel(task.status)}
+        </button>
       </div>
     </div>
   );
@@ -75,9 +111,11 @@ function MobileTaskCard({ task }: { task: Task }) {
 function Section({
   status,
   tasks,
+  onStatusChanged,
 }: {
   status: "TODO" | "IN_PROGRESS" | "DONE";
   tasks: Task[];
+  onStatusChanged: () => Promise<void>;
 }) {
   const label = labelFor(status);
 
@@ -94,7 +132,9 @@ function Section({
 
       <div className="space-y-3">
         {tasks.length > 0 ? (
-          tasks.map((task) => <MobileTaskCard key={task.id} task={task} />)
+          tasks.map((task) => (
+            <MobileTaskCard key={task.id} task={task} onStatusChanged={onStatusChanged} />
+          ))
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-[12px] font-medium text-slate-400">
             No tasks in {label.toLowerCase()}.
@@ -105,7 +145,11 @@ function Section({
   );
 }
 
-export default function ProjectBoardMobile({ tasks, onCreateTask }: Props) {
+export default function ProjectBoardMobile({
+  tasks,
+  onCreateTask,
+  onStatusChanged,
+}: Props) {
   const grouped = groupTasks(tasks);
 
   return (
@@ -124,9 +168,13 @@ export default function ProjectBoardMobile({ tasks, onCreateTask }: Props) {
         </button>
       </div>
 
-      <Section status="TODO" tasks={grouped.TODO} />
-      <Section status="IN_PROGRESS" tasks={grouped.IN_PROGRESS} />
-      <Section status="DONE" tasks={grouped.DONE} />
+      <Section status="TODO" tasks={grouped.TODO} onStatusChanged={onStatusChanged} />
+      <Section
+        status="IN_PROGRESS"
+        tasks={grouped.IN_PROGRESS}
+        onStatusChanged={onStatusChanged}
+      />
+      <Section status="DONE" tasks={grouped.DONE} onStatusChanged={onStatusChanged} />
     </div>
   );
 }

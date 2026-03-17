@@ -11,6 +11,9 @@ import com.flowforge.task.dto.UpdateTaskStatusRequest;
 import com.flowforge.task.entity.Task;
 import org.springframework.stereotype.Service;
 import com.flowforge.task.repository.TaskRepository;
+import com.flowforge.common.BadRequestException;
+
+import java.util.UUID;
 
 import java.time.Instant;
 import java.util.List;
@@ -117,6 +120,19 @@ public class TaskService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public TaskResponse updateTaskStatus(UUID taskId, UpdateTaskStatusRequest request, CustomUserPrincipal principal) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new BadRequestException("Task not found"));
+
+        if (!task.getTenantId().equals(principal.getTenantId())) {
+            throw new BadRequestException("Task does not belong to your workspace");
+        }
+
+        task.setStatus(request.getStatus());
+        Task saved = taskRepository.save(task);
+        return toResponse(saved);
     }
 
     private TaskResponse toResponse(Task task) {

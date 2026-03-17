@@ -11,3 +11,10 @@ export async function createTask(payload: CreateTaskPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function updateTaskStatus(id: string, status: string) {
+  return apiClient<Task>(`/api/tasks/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

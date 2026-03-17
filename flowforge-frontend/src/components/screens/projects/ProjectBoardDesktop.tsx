@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { updateTaskStatus } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
 
 type Props = {
   tasks: Task[];
   onCreateTask: () => void;
+  onStatusChanged: () => Promise<void>;
 };
 
 function groupTasks(tasks: Task[]) {
@@ -18,14 +21,8 @@ function groupTasks(tasks: Task[]) {
 function priorityClass(priority: string) {
   const value = priority?.toUpperCase?.() || "";
 
-  if (value === "HIGH" || value === "URGENT") {
-    return "bg-rose-100 text-rose-600";
-  }
-
-  if (value === "MEDIUM") {
-    return "bg-amber-100 text-amber-600";
-  }
-
+  if (value === "HIGH" || value === "URGENT") return "bg-rose-100 text-rose-600";
+  if (value === "MEDIUM") return "bg-amber-100 text-amber-600";
   return "bg-slate-100 text-slate-600";
 }
 
@@ -37,7 +34,6 @@ function statusMeta(status: "TODO" | "IN_PROGRESS" | "DONE") {
       countBg: "bg-slate-100 text-slate-700",
     };
   }
-
   if (status === "IN_PROGRESS") {
     return {
       title: "In Progress",
@@ -45,7 +41,6 @@ function statusMeta(status: "TODO" | "IN_PROGRESS" | "DONE") {
       countBg: "bg-amber-100 text-amber-700",
     };
   }
-
   return {
     title: "Done",
     dot: "bg-emerald-500",
@@ -55,14 +50,42 @@ function statusMeta(status: "TODO" | "IN_PROGRESS" | "DONE") {
 
 function formatDueDate(dueDate?: string | null) {
   if (!dueDate) return "No due date";
-
   const date = new Date(dueDate);
   if (Number.isNaN(date.getTime())) return "No due date";
-
   return date.toLocaleDateString();
 }
 
-function TaskCard({ task }: { task: Task }) {
+function nextStatus(status: string) {
+  if (status === "TODO") return "IN_PROGRESS";
+  if (status === "IN_PROGRESS") return "DONE";
+  return "TODO";
+}
+
+function actionLabel(status: string) {
+  if (status === "TODO") return "Start";
+  if (status === "IN_PROGRESS") return "Mark Done";
+  return "Reset";
+}
+
+function TaskCard({
+  task,
+  onStatusChanged,
+}: {
+  task: Task;
+  onStatusChanged: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleStatusChange() {
+    try {
+      setLoading(true);
+      await updateTaskStatus(task.id, nextStatus(task.status));
+      await onStatusChanged();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -88,9 +111,14 @@ function TaskCard({ task }: { task: Task }) {
           Due: {formatDueDate(task.dueDate)}
         </span>
 
-        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-          {task.status}
-        </span>
+        <button
+          type="button"
+          onClick={handleStatusChange}
+          disabled={loading}
+          className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white disabled:opacity-60"
+        >
+          {loading ? "Updating..." : actionLabel(task.status)}
+        </button>
       </div>
     </div>
   );
@@ -99,9 +127,11 @@ function TaskCard({ task }: { task: Task }) {
 function Column({
   status,
   tasks,
+  onStatusChanged,
 }: {
   status: "TODO" | "IN_PROGRESS" | "DONE";
   tasks: Task[];
+  onStatusChanged: () => Promise<void>;
 }) {
   const meta = statusMeta(status);
 
@@ -124,7 +154,9 @@ function Column({
 
       <div className="flex flex-1 flex-col gap-4">
         {tasks.length > 0 ? (
-          tasks.map((task) => <TaskCard key={task.id} task={task} />)
+          tasks.map((task) => (
+            <TaskCard key={task.id} task={task} onStatusChanged={onStatusChanged} />
+          ))
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-center text-[13px] font-medium text-slate-400">
             No tasks in {meta.title.toLowerCase()}.
@@ -135,7 +167,11 @@ function Column({
   );
 }
 
-export default function ProjectBoardDesktop({ tasks, onCreateTask }: Props) {
+export default function ProjectBoardDesktop({
+  tasks,
+  onCreateTask,
+  onStatusChanged,
+}: Props) {
   const grouped = groupTasks(tasks);
 
   return (
@@ -155,9 +191,13 @@ export default function ProjectBoardDesktop({ tasks, onCreateTask }: Props) {
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        <Column status="TODO" tasks={grouped.TODO} />
-        <Column status="IN_PROGRESS" tasks={grouped.IN_PROGRESS} />
-        <Column status="DONE" tasks={grouped.DONE} />
+        <Column status="TODO" tasks={grouped.TODO} onStatusChanged={onStatusChanged} />
+        <Column
+          status="IN_PROGRESS"
+          tasks={grouped.IN_PROGRESS}
+          onStatusChanged={onStatusChanged}
+        />
+        <Column status="DONE" tasks={grouped.DONE} onStatusChanged={onStatusChanged} />
       </div>
     </div>
   );

@@ -11,16 +11,26 @@ import {
 import type { Project } from "@/features/projects/types";
 import { getTasksByProject } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
+import { getWorkspaceUsers } from "@/features/users/api";
+import type { WorkspaceUser } from "@/features/users/types";
+
 import ProjectDetailsShell from "./ProjectDetailsShell";
 import ProjectOverviewDesktop from "./ProjectOverviewDesktop";
 import ProjectOverviewMobile from "./ProjectOverviewMobile";
 import ProjectBoardDesktop from "./ProjectBoardDesktop";
 import ProjectBoardMobile from "./ProjectBoardMobile";
+import ProjectListTabDesktop from "./ProjectListTabDesktop";
+import ProjectListTabMobile from "./ProjectListTabMobile";
+import ProjectMembersDesktop from "./ProjectMembersDesktop";
+import ProjectMembersMobile from "./ProjectMembersMobile";
 import EditProjectModal from "./EditProjectModal";
 import ArchiveProjectModal from "./ArchiveProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
 import CreateTaskModal from "./CreateTaskModal";
 import ProjectToasts, { type ProjectToast } from "./ProjectToasts";
+import { buildProjectActivity } from "@/features/activity/utils";
+import ProjectActivityDesktop from "./ProjectActivityDesktop";
+import ProjectActivityMobile from "./ProjectActivityMobile";
 
 type TabKey = "overview" | "board" | "list" | "members" | "activity";
 
@@ -30,7 +40,10 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [members, setMembers] = useState<WorkspaceUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersLoaded, setMembersLoaded] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [openEdit, setOpenEdit] = useState(false);
@@ -42,11 +55,11 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   const [toasts, setToasts] = useState<ProjectToast[]>([]);
 
   function pushToast(toast: Omit<ProjectToast, "id">) {
-    const id = toastIdRef.current++;
-    setToasts((prev) => [...prev, { ...toast, id }]);
+    const nextId = toastIdRef.current++;
+    setToasts((prev) => [...prev, { ...toast, id: nextId }]);
 
     window.setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+      setToasts((prev) => prev.filter((t) => t.id !== nextId));
     }, 3500);
   }
 
@@ -57,6 +70,45 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   async function loadTasksOnly(projectId: string) {
     const taskData = await getTasksByProject(projectId);
     setTasks(taskData);
+  }
+
+  async function refreshProjectTasks() {
+    if (!project) return;
+    await loadTasksOnly(project.id);
+  }
+
+  async function loadMembersOnly() {
+    try {
+      setMembersLoading(true);
+      const usersData = await getWorkspaceUsers();
+      setMembers(usersData);
+      setMembersLoaded(true);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load members";
+
+      if (message === "UNAUTHORIZED") {
+        setMembers([]);
+        setMembersLoaded(false);
+        pushToast({
+          type: "error",
+          title: "Members unavailable",
+          description:
+            "Workspace members could not be loaded. The project page is still available.",
+        });
+        return;
+      }
+
+      setMembers([]);
+      setMembersLoaded(false);
+      pushToast({
+        type: "error",
+        title: "Failed to load members",
+        description: message,
+      });
+    } finally {
+      setMembersLoading(false);
+    }
   }
 
   async function loadProjectDetails() {
@@ -77,7 +129,28 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       const projectData = await getProjectById(id);
       setProject(projectData);
 
-      await loadTasksOnly(id);
+      try {
+        const taskData = await getTasksByProject(id);
+        setTasks(taskData);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load tasks";
+
+        if (message === "UNAUTHORIZED") {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("flowforge_token");
+          }
+          router.replace("/login");
+          return;
+        }
+
+        setTasks([]);
+        pushToast({
+          type: "error",
+          title: "Failed to load tasks",
+          description: message,
+        });
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load project";
@@ -104,6 +177,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   useEffect(() => {
     loadProjectDetails();
   }, [id]);
+
+  useEffect(() => {
+    if (activeTab === "members" && !membersLoaded && !membersLoading) {
+      loadMembersOnly();
+    }
+  }, [activeTab, membersLoaded, membersLoading]);
 
   async function handleArchiveConfirm() {
     if (!project) return;
@@ -201,6 +280,8 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     );
   }
 
+  const activities = buildProjectActivity(project, tasks);
+
   let content: React.ReactNode;
 
   if (activeTab === "overview") {
@@ -226,11 +307,46 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         <ProjectBoardMobile
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
+          onStatusChanged={refreshProjectTasks}
         />
         <ProjectBoardDesktop
           tasks={tasks}
           onCreateTask={() => setOpenCreateTask(true)}
+          onStatusChanged={refreshProjectTasks}
         />
+      </>
+    );
+  } else if (activeTab === "list") {
+    content = (
+      <>
+        <ProjectListTabMobile
+          tasks={tasks}
+          onCreateTask={() => setOpenCreateTask(true)}
+          onStatusChanged={refreshProjectTasks}
+        />
+        <ProjectListTabDesktop
+          tasks={tasks}
+          onCreateTask={() => setOpenCreateTask(true)}
+          onStatusChanged={refreshProjectTasks}
+        />
+      </>
+    );
+  } else if (activeTab === "members") {
+    content = membersLoading ? (
+      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 shadow-sm">
+        Loading members...
+      </div>
+    ) : (
+      <>
+        <ProjectMembersMobile members={members} />
+        <ProjectMembersDesktop members={members} />
+      </>
+    );
+  } else if (activeTab === "activity") {
+    content = (
+      <>
+        <ProjectActivityMobile activities={activities} />
+        <ProjectActivityDesktop activities={activities} />
       </>
     );
   } else {
