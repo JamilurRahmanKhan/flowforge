@@ -1,36 +1,56 @@
 package com.flowforge.user.service;
 
+import com.flowforge.projectmember.repository.ProjectMemberRepository;
 import com.flowforge.security.CustomUserPrincipal;
-import com.flowforge.user.dto.UserResponse;
+import com.flowforge.task.repository.TaskRepository;
+import com.flowforge.user.dto.WorkspaceUserResponse;
 import com.flowforge.user.entity.User;
 import com.flowforge.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final TaskRepository taskRepository;
 
-    public List<UserResponse> getWorkspaceUsers(CustomUserPrincipal principal) {
+    public UserService(
+            UserRepository userRepository,
+            ProjectMemberRepository projectMemberRepository,
+            TaskRepository taskRepository
+    ) {
+        this.userRepository = userRepository;
+        this.projectMemberRepository = projectMemberRepository;
+        this.taskRepository = taskRepository;
+    }
+
+    public List<WorkspaceUserResponse> getWorkspaceUsers(CustomUserPrincipal principal) {
         return userRepository.findAllByTenantIdOrderByCreatedAtDesc(principal.getTenantId())
                 .stream()
-                .map(this::toResponse)
+                .map(this::toWorkspaceResponse)
                 .toList();
     }
 
-    private UserResponse toResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .tenantId(user.getTenantId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .active(user.isActive())
-                .createdAt(user.getCreatedAt())
-                .build();
+    private WorkspaceUserResponse toWorkspaceResponse(User user) {
+        long assignedProjectsCount =
+                projectMemberRepository.countByTenantIdAndUserId(user.getTenantId(), user.getId());
+
+        long assignedTasksCount =
+                taskRepository.countByTenantIdAndAssigneeId(user.getTenantId(), user.getId());
+
+        return new WorkspaceUserResponse(
+                user.getId(),
+                user.getTenantId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.isActive(),
+                user.getCreatedAt(),
+                assignedProjectsCount,
+                assignedTasksCount
+        );
     }
 }

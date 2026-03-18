@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   archiveProject,
@@ -9,7 +9,7 @@ import {
   unarchiveProject,
 } from "@/features/projects/api";
 import type { Project } from "@/features/projects/types";
-import { getTasksByProject } from "@/features/tasks/api";
+import { getTasksByProject, updateTaskStatus } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
 import type { ProjectMember } from "@/features/project-members/types";
 import {
@@ -39,9 +39,17 @@ import ProjectActivityMobile from "./ProjectActivityMobile";
 
 type TabKey = "overview" | "board" | "list" | "members" | "activity";
 
+function nextStatus(status: string) {
+  if (status === "TODO") return "IN_PROGRESS";
+  if (status === "IN_PROGRESS") return "DONE";
+  return "TODO";
+}
+
 export default function ProjectDetailsScreen({ id }: { id: string }) {
   const router = useRouter();
   const toastIdRef = useRef(1);
+
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -55,6 +63,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [openArchive, setOpenArchive] = useState(false);
@@ -67,6 +76,27 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toasts, setToasts] = useState<ProjectToast[]>([]);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const memberNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+
+    for (const member of assignedMembers) {
+      map[member.userId] = member.name;
+    }
+
+    for (const member of availableMembers) {
+      map[member.userId] = member.name;
+    }
+
+    return map;
+  }, [assignedMembers, availableMembers]);
 
   function pushToast(toast: Omit<ProjectToast, "id">) {
     const nextId = toastIdRef.current++;
@@ -143,11 +173,19 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       setProject(projectData);
 
       try {
-        const taskData = await getTasksByProject(id);
+        const [taskData, assigned, available] = await Promise.all([
+          getTasksByProject(id),
+          getAssignedProjectMembers(id).catch(() => []),
+          getAvailableProjectMembers(id).catch(() => []),
+        ]);
+
         setTasks(taskData);
+        setAssignedMembers(assigned);
+        setAvailableMembers(available);
+        setMembersLoaded(true);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Failed to load tasks";
+          err instanceof Error ? err.message : "Failed to load project data";
 
         if (message === "UNAUTHORIZED") {
           localStorage.removeItem("flowforge_token");
@@ -155,10 +193,9 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
           return;
         }
 
-        setTasks([]);
         pushToast({
           type: "error",
-          title: "Failed to load tasks",
+          title: "Partial load issue",
           description: message,
         });
       }
@@ -277,6 +314,28 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     }
   }
 
+  async function handleTaskStatusChange(task: Task) {
+    try {
+      const updated = await updateTaskStatus(task.id, nextStatus(task.status));
+      setTasks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+
+      pushToast({
+        type: "success",
+        title: "Task updated",
+        description: `${updated.title} moved to ${updated.status}.`,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update task status";
+
+      pushToast({
+        type: "error",
+        title: "Status update failed",
+        description: message,
+      });
+    }
+  }
+
   if (loading) {
     return (
       <div className="rounded-[28px] border border-[#e6ebf3] bg-white px-6 py-14 text-center text-[#64748b] shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
@@ -298,87 +357,106 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   let content: React.ReactNode;
 
   if (activeTab === "overview") {
-    content = (
-      <>
-        <ProjectOverviewMobile
-          project={project}
-          tasks={tasks}
-          onEdit={() => setOpenEdit(true)}
-          onCreateTask={() => setOpenCreateTask(true)}
-        />
-        <ProjectOverviewDesktop
-          project={project}
-          tasks={tasks}
-          onEdit={() => setOpenEdit(true)}
-          onCreateTask={() => setOpenCreateTask(true)}
-        />
-      </>
+    content = isDesktop ? (
+      <ProjectOverviewDesktop
+        project={project}
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onEdit={() => setOpenEdit(true)}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
+    ) : (
+      <ProjectOverviewMobile
+        project={project}
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onEdit={() => setOpenEdit(true)}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
     );
   } else if (activeTab === "board") {
-    content = (
-      <>
-        <ProjectBoardMobile
-          tasks={tasks}
-          onCreateTask={() => setOpenCreateTask(true)}
-          onStatusChanged={refreshProjectTasks}
-          onEditTask={setEditingTask}
-          onDeleteTask={setDeletingTask}
-        />
-        <ProjectBoardDesktop
-          tasks={tasks}
-          onCreateTask={() => setOpenCreateTask(true)}
-          onStatusChanged={refreshProjectTasks}
-          onEditTask={setEditingTask}
-          onDeleteTask={setDeletingTask}
-        />
-      </>
+    content = isDesktop ? (
+      <ProjectBoardDesktop
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
+    ) : (
+      <ProjectBoardMobile
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
     );
   } else if (activeTab === "list") {
-    content = (
-      <>
-        <ProjectListTabMobile
-          tasks={tasks}
-          onCreateTask={() => setOpenCreateTask(true)}
-          onStatusChanged={refreshProjectTasks}
-          onEditTask={setEditingTask}
-          onDeleteTask={setDeletingTask}
-        />
-        <ProjectListTabDesktop
-          tasks={tasks}
-          onCreateTask={() => setOpenCreateTask(true)}
-          onStatusChanged={refreshProjectTasks}
-          onEditTask={setEditingTask}
-          onDeleteTask={setDeletingTask}
-        />
-      </>
+    content = isDesktop ? (
+      <ProjectListTabDesktop
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
+    ) : (
+      <ProjectListTabMobile
+        tasks={tasks}
+        memberNameMap={memberNameMap}
+        activeTaskId={activeTaskId}
+        onSelectTask={setActiveTaskId}
+        onCreateTask={() => setOpenCreateTask(true)}
+        onStatusChanged={handleTaskStatusChange}
+        onEditTask={setEditingTask}
+        onDeleteTask={setDeletingTask}
+      />
     );
   } else if (activeTab === "members") {
     content = membersLoading ? (
       <div className="rounded-[24px] border border-[#e6ebf3] bg-white px-6 py-10 text-center text-[#64748b] shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
         Loading members...
       </div>
+    ) : isDesktop ? (
+      <ProjectMembersDesktop
+        projectId={project.id}
+        assignedMembers={assignedMembers}
+        availableMembers={availableMembers}
+        onMembersChanged={loadMembersOnly}
+      />
     ) : (
-      <>
-        <ProjectMembersMobile
-          projectId={project.id}
-          assignedMembers={assignedMembers}
-          availableMembers={availableMembers}
-          onMembersChanged={loadMembersOnly}
-        />
-        <ProjectMembersDesktop
-          projectId={project.id}
-          assignedMembers={assignedMembers}
-          availableMembers={availableMembers}
-          onMembersChanged={loadMembersOnly}
-        />
-      </>
+      <ProjectMembersMobile
+        projectId={project.id}
+        assignedMembers={assignedMembers}
+        availableMembers={availableMembers}
+        onMembersChanged={loadMembersOnly}
+      />
     );
   } else {
-    content = (
-      <>
-        <ProjectActivityMobile activities={activities} />
-        <ProjectActivityDesktop activities={activities} />
-      </>
+    content = isDesktop ? (
+      <ProjectActivityDesktop activities={activities} />
+    ) : (
+      <ProjectActivityMobile activities={activities} />
     );
   }
 
@@ -445,9 +523,11 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <CreateTaskModal
         open={openCreateTask}
         projectId={project.id}
+        members={assignedMembers}
         onClose={() => setOpenCreateTask(false)}
-        onCreated={async () => {
+        onCreated={async (createdTask) => {
           await loadTasksOnly(project.id);
+          setActiveTaskId(createdTask.id);
           pushToast({
             type: "success",
             title: "Task created",
@@ -466,6 +546,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <EditTaskModal
         open={!!editingTask}
         task={editingTask}
+        members={assignedMembers}
         onClose={() => setEditingTask(null)}
         onUpdated={refreshProjectTasks}
       />
@@ -474,7 +555,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         open={!!deletingTask}
         task={deletingTask}
         onClose={() => setDeletingTask(null)}
-        onDeleted={refreshProjectTasks}
+        onDeleted={async () => {
+          await refreshProjectTasks();
+          if (deletingTask && activeTaskId === deletingTask.id) {
+            setActiveTaskId(null);
+          }
+        }}
       />
 
       <ProjectToasts toasts={toasts} onRemove={removeToast} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, Lock, Users, X } from "lucide-react";
+import { ArrowRight, ChevronDown, X } from "lucide-react";
 import { updateProject } from "@/features/projects/api";
 import type { Project } from "@/features/projects/types";
 
@@ -22,8 +22,7 @@ export default function EditProjectModal({
 }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("ACTIVE");
-  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
+  const [visibility, setVisibility] = useState("PUBLIC");
   const [defaultWorkflow, setDefaultWorkflow] = useState(
     "Standard Agile (Kanban)"
   );
@@ -31,15 +30,14 @@ export default function EditProjectModal({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!project || !open) return;
+    if (!open || !project) return;
 
-    setName(project.name || "");
+    setName(project.name);
     setDescription(project.description || "");
-    setStatus(project.status || "ACTIVE");
-    setVisibility((project.visibility as "PUBLIC" | "PRIVATE") || "PUBLIC");
+    setVisibility(project.visibility || "PUBLIC");
     setDefaultWorkflow(project.defaultWorkflow || "Standard Agile (Kanban)");
     setError("");
-  }, [project, open]);
+  }, [open, project]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,9 +58,7 @@ export default function EditProjectModal({
     setError("");
 
     if (!name.trim()) {
-      const message = "Project name is required";
-      setError(message);
-      onError?.(message);
+      setError("Project name is required");
       return;
     }
 
@@ -71,8 +67,8 @@ export default function EditProjectModal({
 
       const updated = await updateProject(project.id, {
         name: name.trim(),
-        description: description.trim(),
-        status,
+        description: description.trim() || undefined,
+        status: project.status,
         visibility,
         defaultWorkflow,
       });
@@ -120,24 +116,7 @@ export default function EditProjectModal({
                 Edit Project
               </h2>
 
-              <button
-                type="button"
-                className="text-[16px] font-bold text-[#2563eb]"
-              >
-                Help
-              </button>
-            </div>
-
-            <div className="flex gap-8 px-7 lg:px-8">
-              <div className="border-b-[3px] border-[#2563eb] pb-4 text-[17px] font-extrabold text-[#0f172a]">
-                Basics
-              </div>
-              <div className="border-b-[3px] border-transparent pb-4 text-[17px] font-extrabold text-[#a0aec0]">
-                Access
-              </div>
-              <div className="border-b-[3px] border-transparent pb-4 text-[17px] font-extrabold text-[#a0aec0]">
-                Settings
-              </div>
+              <div className="w-11" />
             </div>
           </div>
 
@@ -150,8 +129,23 @@ export default function EditProjectModal({
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-[86px] w-full rounded-[18px] border border-[#dbe4ef] bg-[#f9fbfe] px-6 text-[22px] text-[#0f172a] outline-none focus:border-[#2563eb]"
+                  placeholder="FlowForge Dashboard"
+                  className="h-[86px] w-full rounded-[18px] border border-[#dbe4ef] bg-[#f9fbfe] px-6 text-[22px] text-[#0f172a] outline-none placeholder:text-[#9aa9c2] focus:border-[#2563eb]"
                 />
+              </div>
+
+              <div>
+                <label className="mb-3 block text-[17px] font-extrabold text-[#0f172a]">
+                  Project Key
+                </label>
+                <input
+                  value={project.key}
+                  disabled
+                  className="h-[86px] w-full rounded-[18px] border border-[#e2e8f0] bg-slate-100 px-6 text-[22px] uppercase tracking-[0.08em] text-[#64748b] outline-none"
+                />
+                <p className="mt-3 text-[14px] font-medium text-[#64748b]">
+                  Project key cannot be changed after creation.
+                </p>
               </div>
 
               <div>
@@ -161,28 +155,10 @@ export default function EditProjectModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Briefly describe the goals of this project..."
                   rows={4}
-                  className="w-full resize-none rounded-[18px] border border-[#dbe4ef] bg-[#f9fbfe] px-6 py-5 text-[20px] leading-9 text-[#0f172a] outline-none focus:border-[#2563eb]"
+                  className="w-full resize-none rounded-[18px] border border-[#dbe4ef] bg-[#f9fbfe] px-6 py-5 text-[20px] leading-9 text-[#0f172a] outline-none placeholder:text-[#9aa9c2] focus:border-[#2563eb]"
                 />
-              </div>
-
-              <div>
-                <label className="mb-3 block text-[17px] font-extrabold text-[#0f172a]">
-                  Status
-                </label>
-
-                <div className="relative">
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="h-[72px] w-full appearance-none rounded-[18px] border border-[#dbe4ef] bg-[#f9fbfe] px-6 pr-16 text-[18px] text-[#0f172a] outline-none focus:border-[#2563eb]"
-                  >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="ARCHIVED">ARCHIVED</option>
-                  </select>
-
-                  <ChevronDown className="pointer-events-none absolute right-5 top-1/2 h-7 w-7 -translate-y-1/2 text-[#94a3b8]" />
-                </div>
               </div>
 
               <div>
@@ -194,38 +170,12 @@ export default function EditProjectModal({
                   <button
                     type="button"
                     onClick={() => setVisibility("PUBLIC")}
-                    className={`relative rounded-[22px] border-2 p-5 text-left transition ${
+                    className={`rounded-[22px] border-2 p-5 text-left transition ${
                       visibility === "PUBLIC"
                         ? "border-[#2563eb] bg-[#f3f7ff]"
                         : "border-[#e2e8f0] bg-white"
                     }`}
                   >
-                    <div className="mb-6 flex items-center justify-between">
-                      <Users
-                        className={`h-8 w-8 ${
-                          visibility === "PUBLIC"
-                            ? "text-[#2563eb]"
-                            : "text-[#94a3b8]"
-                        }`}
-                      />
-
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
-                          visibility === "PUBLIC"
-                            ? "border-[#2563eb]"
-                            : "border-[#94a3b8]"
-                        }`}
-                      >
-                        <div
-                          className={`h-3.5 w-3.5 rounded-full ${
-                            visibility === "PUBLIC"
-                              ? "bg-[#2563eb]"
-                              : "bg-transparent"
-                          }`}
-                        />
-                      </div>
-                    </div>
-
                     <p className="text-[20px] font-extrabold text-[#0f172a]">
                       Public
                     </p>
@@ -237,38 +187,12 @@ export default function EditProjectModal({
                   <button
                     type="button"
                     onClick={() => setVisibility("PRIVATE")}
-                    className={`relative rounded-[22px] border-2 p-5 text-left transition ${
+                    className={`rounded-[22px] border-2 p-5 text-left transition ${
                       visibility === "PRIVATE"
                         ? "border-[#2563eb] bg-[#f3f7ff]"
                         : "border-[#e2e8f0] bg-white"
                     }`}
                   >
-                    <div className="mb-6 flex items-center justify-between">
-                      <Lock
-                        className={`h-8 w-8 ${
-                          visibility === "PRIVATE"
-                            ? "text-[#2563eb]"
-                            : "text-[#94a3b8]"
-                        }`}
-                      />
-
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
-                          visibility === "PRIVATE"
-                            ? "border-[#2563eb]"
-                            : "border-[#94a3b8]"
-                        }`}
-                      >
-                        <div
-                          className={`h-3.5 w-3.5 rounded-full ${
-                            visibility === "PRIVATE"
-                              ? "bg-[#2563eb]"
-                              : "bg-transparent"
-                          }`}
-                        />
-                      </div>
-                    </div>
-
                     <p className="text-[20px] font-extrabold text-[#0f172a]">
                       Private
                     </p>

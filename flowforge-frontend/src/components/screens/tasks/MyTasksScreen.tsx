@@ -60,16 +60,24 @@ export default function MyTasksScreen() {
   }, [tasks, filter]);
 
   async function handleStatusChange(task: Task) {
-    await updateTaskStatus(task.id, nextStatus(task.status));
-    await loadTasks();
+    try {
+      const updated = await updateTaskStatus(task.id, nextStatus(task.status));
+      setTasks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task status");
+    }
   }
 
   async function handleDelete(taskId: string) {
-    await deleteTask(taskId);
-    if (activeTaskId === taskId) {
-      setActiveTaskId(null);
+    try {
+      await deleteTask(taskId);
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      if (activeTaskId === taskId) {
+        setActiveTaskId(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete task");
     }
-    await loadTasks();
   }
 
   return (

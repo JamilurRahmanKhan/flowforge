@@ -15,6 +15,7 @@ export type UpdateTaskInput = {
   description: string;
   priority: string;
   dueDate: string | null;
+  assigneeId?: string | null;
 };
 
 export async function getTasksByProject(projectId: string) {
@@ -47,6 +48,23 @@ export async function updateTaskStatus(id: string, status: string) {
   return apiClient<Task>(`/api/tasks/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function assignTask(id: string, assigneeId: string | null) {
+  if (!assigneeId) {
+    return updateTask(id, {
+      title: "",
+      description: "",
+      priority: "",
+      dueDate: null,
+      assigneeId: null,
+    });
+  }
+
+  return apiClient<Task>(`/api/tasks/${id}/assign`, {
+    method: "PATCH",
+    body: JSON.stringify({ assigneeId }),
   });
 }
 

@@ -14,4 +14,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     Optional<Task> findByIdAndTenantId(UUID id, UUID tenantId);
 
     List<Task> findByTenantIdAndAssigneeIdOrderByCreatedAtDesc(UUID tenantId, UUID assigneeId);
+
+    long countByTenantIdAndAssigneeId(UUID tenantId, UUID assigneeId);
 }

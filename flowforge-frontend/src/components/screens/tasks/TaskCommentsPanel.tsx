@@ -44,9 +44,10 @@ export default function TaskCommentsPanel({
 
     try {
       setSubmitting(true);
-      await createComment(taskId, body.trim());
+      setError("");
+      const created = await createComment(taskId, body.trim());
+      setComments((prev) => [...prev, created]);
       setBody("");
-      await loadComments();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add comment");
     } finally {

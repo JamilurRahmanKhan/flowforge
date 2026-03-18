@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { unarchiveProject } from "@/features/projects/api";
+import {
+  archiveProject,
+  deleteProject,
+  unarchiveProject,
+} from "@/features/projects/api";
 import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
   Folder,
   LayoutGrid,
-  MoreHorizontal,
   Search,
   UserRound,
 } from "lucide-react";
 import type { Project } from "@/features/projects/types";
+import { useState } from "react";
 
 type Props = {
   projects: Project[];
@@ -21,7 +25,9 @@ type Props = {
   onSearchChange: (value: string) => void;
   onTabChange: (value: "ACTIVE" | "ARCHIVED") => void;
   onOpenCreate: () => void;
-  onProjectStatusChanged: () => void;
+  onEditProject: (project: Project) => void;
+  onProjectUpdated: (project: Project) => void;
+  onProjectDeleted: (project: Project) => void;
   sortBy: "RECENT" | "NAME_ASC" | "NAME_DESC";
   onSortChange: (value: "RECENT" | "NAME_ASC" | "NAME_DESC") => void;
   isTabEmpty: boolean;
@@ -30,7 +36,10 @@ type Props = {
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/);
-  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
 }
 
 function projectVisual(index: number) {
@@ -45,7 +54,7 @@ function projectVisual(index: number) {
       status: "IN PROGRESS",
       progress: 74,
       openTasks: 12,
-      updated: "Updated 2h ago",
+      updated: "Updated recently",
     },
     {
       initialsBg: "bg-[#f3e8ff]",
@@ -57,7 +66,7 @@ function projectVisual(index: number) {
       status: "PLANNING",
       progress: 32,
       openTasks: 8,
-      updated: "Updated 5h ago",
+      updated: "Updated recently",
     },
     {
       initialsBg: "bg-[#ffedd5]",
@@ -69,7 +78,7 @@ function projectVisual(index: number) {
       status: "REVIEW",
       progress: 95,
       openTasks: 2,
-      updated: "Updated 10m ago",
+      updated: "Updated recently",
     },
   ];
 
@@ -79,29 +88,75 @@ function projectVisual(index: number) {
 function MobileProjectCard({
   project,
   index,
-  tab,
-  onProjectStatusChanged,
+  onEditProject,
+  onProjectUpdated,
+  onProjectDeleted,
 }: {
   project: Project;
   index: number;
-  tab: "ACTIVE" | "ARCHIVED";
-  onProjectStatusChanged: () => void;
+  onEditProject: (project: Project) => void;
+  onProjectUpdated: (project: Project) => void;
+  onProjectDeleted: (project: Project) => void;
 }) {
-  async function handleRestore(e: React.MouseEvent<HTMLButtonElement>) {
+  const [busy, setBusy] = useState(false);
+  const visual = projectVisual(index);
+  const archived = project.status === "ARCHIVED";
+
+  async function handleRestoreOrArchive(
+    e: React.MouseEvent<HTMLButtonElement>
+  ) {
     e.preventDefault();
     e.stopPropagation();
-    await unarchiveProject(project.id);
-    onProjectStatusChanged();
+
+    try {
+      setBusy(true);
+      const updated = archived
+        ? await unarchiveProject(project.id)
+        : await archiveProject(project.id);
+      onProjectUpdated(updated);
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to update project status"
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const visual = projectVisual(index);
+  async function handleDelete(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${project.name}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setBusy(true);
+      await deleteProject(project.id);
+      onProjectDeleted(project);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete project");
+      setBusy(false);
+    }
+  }
+
+  function handleEdit(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    onEditProject(project);
+  }
 
   return (
     <Link
       href={`/projects/${project.id}`}
       className="block rounded-[28px] bg-white px-7 py-7 shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
           <div
             className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ${visual.initialsBg}`}
@@ -121,13 +176,25 @@ function MobileProjectCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => e.preventDefault()}
-          className="rounded-full p-1 text-[#cbd5e1]"
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={handleEdit}
+            disabled={busy}
+            className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#334155] disabled:opacity-60"
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={busy}
+            className="rounded-full border border-rose-200 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-rose-600 disabled:opacity-60"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       <div className="mt-8">
@@ -167,24 +234,27 @@ function MobileProjectCard({
 
           <div className="text-right">
             <span
-              className={`inline-flex rounded-xl px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] ${visual.statusBg} ${visual.statusText}`}
+              className={`inline-flex rounded-xl px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] ${
+                archived
+                  ? "bg-slate-100 text-slate-600"
+                  : `${visual.statusBg} ${visual.statusText}`
+              }`}
             >
-              {project.status === "ARCHIVED" ? "ARCHIVED" : visual.status}
+              {archived ? "ARCHIVED" : visual.status}
             </span>
 
             <p className="mt-2 text-[12px] italic text-[#94a3b8]">
               {visual.updated}
             </p>
 
-            {tab === "ARCHIVED" ? (
-              <button
-                type="button"
-                onClick={handleRestore}
-                className="mt-3 rounded-full bg-[#eef4ff] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#2563eb]"
-              >
-                Restore
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={handleRestoreOrArchive}
+              disabled={busy}
+              className="mt-3 rounded-full bg-[#eef4ff] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#2563eb] disabled:opacity-60"
+            >
+              {archived ? "Restore" : "Archive"}
+            </button>
           </div>
         </div>
       </div>
@@ -235,17 +305,14 @@ export default function ProjectsListMobile({
   onSearchChange,
   onTabChange,
   onOpenCreate,
-  onProjectStatusChanged,
+  onEditProject,
+  onProjectUpdated,
+  onProjectDeleted,
   sortBy,
   onSortChange,
   isTabEmpty,
   isSearchEmpty,
 }: Props) {
-    function sortLabel(value: "RECENT" | "NAME_ASC" | "NAME_DESC") {
-      if (value === "NAME_ASC") return "A–Z";
-      if (value === "NAME_DESC") return "Z–A";
-      return "Recent";
-    }
   const showEmpty = isTabEmpty || isSearchEmpty;
 
   return (
@@ -354,8 +421,9 @@ export default function ProjectsListMobile({
                 key={project.id}
                 project={project}
                 index={index}
-                tab={tab}
-                onProjectStatusChanged={onProjectStatusChanged}
+                onEditProject={onEditProject}
+                onProjectUpdated={onProjectUpdated}
+                onProjectDeleted={onProjectDeleted}
               />
             ))
           )}

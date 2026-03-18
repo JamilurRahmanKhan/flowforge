@@ -1,5 +1,6 @@
 "use client";
 
+import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
 import type { Project } from "@/features/projects/types";
 import type { Task } from "@/features/tasks/types";
 
@@ -32,16 +33,40 @@ function formatDueDate(value?: string | null) {
   return date.toLocaleDateString();
 }
 
+function actionLabel(status: string) {
+  if (status === "TODO") return "Start";
+  if (status === "IN_PROGRESS") return "Mark Done";
+  return "Reset";
+}
+
+function badgeClass(status: string) {
+  if (status === "DONE") return "bg-emerald-100 text-emerald-700";
+  if (status === "IN_PROGRESS") return "bg-amber-100 text-amber-700";
+  return "bg-slate-100 text-slate-700";
+}
+
 export default function ProjectOverviewDesktop({
   project,
   tasks,
+  memberNameMap,
+  activeTaskId,
+  onSelectTask,
   onEdit,
   onCreateTask,
+  onStatusChanged,
+  onEditTask,
+  onDeleteTask,
 }: {
   project: Project;
   tasks: Task[];
+  memberNameMap: Record<string, string>;
+  activeTaskId: string | null;
+  onSelectTask: (taskId: string) => void;
   onEdit: () => void;
   onCreateTask: () => void;
+  onStatusChanged: (task: Task) => Promise<void>;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }) {
   const todo = tasks.filter((task) => task.status === "TODO").length;
   const inProgress = tasks.filter((task) => task.status === "IN_PROGRESS").length;
@@ -50,7 +75,7 @@ export default function ProjectOverviewDesktop({
   const recentTasks = [...tasks].slice(0, 5);
 
   return (
-    <div className="hidden lg:block space-y-8">
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
@@ -97,21 +122,68 @@ export default function ProjectOverviewDesktop({
               recentTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="rounded-[20px] border border-[#eef2f7] bg-[#f8fafc] px-5 py-4"
+                  className={`rounded-[20px] border px-5 py-4 ${
+                    activeTaskId === task.id
+                      ? "border-[#2563eb] bg-[#f8fbff]"
+                      : "border-[#eef2f7] bg-[#f8fafc]"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => onSelectTask(task.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
                       <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
                         {task.title}
                       </p>
                       <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#64748b]">
                         {task.description || "No description provided."}
                       </p>
-                    </div>
 
-                    <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#475569]">
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#64748b]">
+                        <span>
+                          Assignee:{" "}
+                          {task.assigneeId
+                            ? memberNameMap[task.assigneeId] || "Unknown member"
+                            : "Unassigned"}
+                        </span>
+                        <span>•</span>
+                        <span>Due: {formatDueDate(task.dueDate)}</span>
+                      </div>
+                    </button>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] ${badgeClass(
+                        task.status
+                      )}`}
+                    >
                       {task.status}
                     </span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onStatusChanged(task)}
+                      className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
+                    >
+                      {actionLabel(task.status)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEditTask(task)}
+                      className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteTask(task)}
+                      className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))
@@ -123,54 +195,64 @@ export default function ProjectOverviewDesktop({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-          <h3 className="text-[22px] font-extrabold tracking-tight text-[#0f172a]">
-            Project Info
-          </h3>
+        <div className="space-y-6">
+          <div className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <h3 className="text-[22px] font-extrabold tracking-tight text-[#0f172a]">
+              Project Info
+            </h3>
 
-          <div className="mt-6 space-y-5">
-            <div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
-                Project Key
-              </p>
-              <p className="mt-2 text-[16px] font-bold text-[#0f172a]">{project.key}</p>
-            </div>
+            <div className="mt-6 space-y-5">
+              <div>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                  Project Key
+                </p>
+                <p className="mt-2 text-[16px] font-bold text-[#0f172a]">{project.key}</p>
+              </div>
 
-            <div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
-                Visibility
-              </p>
-              <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
-                {project.visibility || "PRIVATE"}
-              </p>
-            </div>
+              <div>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                  Visibility
+                </p>
+                <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
+                  {project.visibility || "PRIVATE"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
-                Default Workflow
-              </p>
-              <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
-                {project.defaultWorkflow || "KANBAN"}
-              </p>
-            </div>
+              <div>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                  Default Workflow
+                </p>
+                <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
+                  {project.defaultWorkflow || "KANBAN"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
-                Next Due Date
-              </p>
-              <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
-                {formatDueDate(
-                  tasks
-                    .filter((task) => !!task.dueDate)
-                    .sort(
-                      (a, b) =>
-                        new Date(a.dueDate || "").getTime() -
-                        new Date(b.dueDate || "").getTime()
-                    )[0]?.dueDate || null
-                )}
-              </p>
+              <div>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                  Next Due Date
+                </p>
+                <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
+                  {formatDueDate(
+                    tasks
+                      .filter((task) => !!task.dueDate)
+                      .sort(
+                        (a, b) =>
+                          new Date(a.dueDate || "").getTime() -
+                          new Date(b.dueDate || "").getTime()
+                      )[0]?.dueDate || null
+                  )}
+                </p>
+              </div>
             </div>
           </div>
+
+          {activeTaskId ? (
+            <TaskCommentsPanel taskId={activeTaskId} />
+          ) : (
+            <div className="rounded-[24px] border border-dashed border-[#dbe4f0] bg-white px-5 py-10 text-center text-[14px] font-medium text-[#94a3b8]">
+              Select a task to view and add comments.
+            </div>
+          )}
         </div>
       </div>
     </div>
