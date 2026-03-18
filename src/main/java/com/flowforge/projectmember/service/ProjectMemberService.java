@@ -34,31 +34,26 @@ public class ProjectMemberService {
         this.userRepository = userRepository;
     }
 
-    public List<ProjectMemberResponse> getAssignedMembers(UUID projectId, CustomUserPrincipal principal) {
-        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
-                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+    public List<ProjectMemberResponse> getAssignedMembers(UUID projectId, CustomUserPrincipal currentUser) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, currentUser.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found"));
 
         List<ProjectMember> assignments =
-                projectMemberRepository.findByTenantIdAndProjectId(principal.getTenantId(), project.getId());
+                projectMemberRepository.findByTenantIdAndProjectIdOrderByCreatedAtAsc(
+                        currentUser.getTenantId(),
+                        project.getId()
+                );
 
-        Set<UUID> userIds = assignments.stream()
-                .map(ProjectMember::getUserId)
-                .collect(Collectors.toSet());
-
-        List<User> users = userRepository.findAllByTenantIdOrderByCreatedAtDesc(principal.getTenantId())
-                .stream()
-                .filter(user -> userIds.contains(user.getId()))
-                .toList();
-
-        return users.stream()
-                .map(user -> {
-                    ProjectMember assignment = assignments.stream()
-                            .filter(pm -> pm.getUserId().equals(user.getId()))
-                            .findFirst()
-                            .orElseThrow();
+        return assignments.stream()
+                .map(assignment -> {
+                    User user = userRepository.findByIdAndTenantId(
+                                    assignment.getUserId(),
+                                    currentUser.getTenantId()
+                            )
+                            .orElseThrow(() -> new BadRequestException("Assigned user not found"));
 
                     return ProjectMemberResponse.builder()
-                            .id(assignment.getId())
+                            .assignmentId(assignment.getId())
                             .userId(user.getId())
                             .name(user.getName())
                             .email(user.getEmail())
@@ -67,25 +62,28 @@ public class ProjectMemberService {
                             .joinedAt(assignment.getCreatedAt())
                             .build();
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
-    public List<ProjectMemberResponse> getAvailableMembers(UUID projectId, CustomUserPrincipal principal) {
-        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
-                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+    public List<ProjectMemberResponse> getAvailableMembers(UUID projectId, CustomUserPrincipal currentUser) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, currentUser.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found"));
 
         List<ProjectMember> assignments =
-                projectMemberRepository.findByTenantIdAndProjectId(principal.getTenantId(), project.getId());
+                projectMemberRepository.findByTenantIdAndProjectIdOrderByCreatedAtAsc(
+                        currentUser.getTenantId(),
+                        project.getId()
+                );
 
         Set<UUID> assignedUserIds = assignments.stream()
                 .map(ProjectMember::getUserId)
                 .collect(Collectors.toSet());
 
-        return userRepository.findAllByTenantIdOrderByCreatedAtDesc(principal.getTenantId())
+        return userRepository.findAllByTenantIdOrderByCreatedAtDesc(currentUser.getTenantId())
                 .stream()
                 .filter(user -> !assignedUserIds.contains(user.getId()))
                 .map(user -> ProjectMemberResponse.builder()
-                        .id(null)
+                        .assignmentId(null)
                         .userId(user.getId())
                         .name(user.getName())
                         .email(user.getEmail())
@@ -93,42 +91,49 @@ public class ProjectMemberService {
                         .active(user.isActive())
                         .joinedAt(null)
                         .build())
-                .toList();
+                .collect(Collectors.toList());
     }
 
-    public void assignMember(UUID projectId, UUID userId, CustomUserPrincipal principal) {
-        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
-                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+    public void assignMember(UUID projectId, UUID userId, CustomUserPrincipal currentUser) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, currentUser.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found"));
 
-        User user = userRepository.findByIdAndTenantId(userId, principal.getTenantId())
-                .orElseThrow(() -> new BadRequestException("User not found in this workspace"));
+        User user = userRepository.findByIdAndTenantId(userId, currentUser.getTenantId())
+                .orElseThrow(() -> new BadRequestException("User not found"));
 
-        boolean alreadyAssigned = projectMemberRepository
-                .findByTenantIdAndProjectIdAndUserId(principal.getTenantId(), project.getId(), user.getId())
-                .isPresent();
+        boolean alreadyAssigned = projectMemberRepository.existsByTenantIdAndProjectIdAndUserId(
+                currentUser.getTenantId(),
+                project.getId(),
+                user.getId()
+        );
 
         if (alreadyAssigned) {
             throw new BadRequestException("User is already assigned to this project");
         }
 
-        projectMemberRepository.save(ProjectMember.builder()
-                .id(UUID.randomUUID())
-                .tenantId(principal.getTenantId())
+        ProjectMember assignment = ProjectMember.builder()
+                .tenantId(currentUser.getTenantId())
                 .projectId(project.getId())
                 .userId(user.getId())
-                .addedBy(principal.getUserId())
+                .addedBy(currentUser.getUserId())
                 .createdAt(Instant.now())
-                .build());
+                .build();
+
+        projectMemberRepository.save(assignment);
     }
 
-    public void removeMember(UUID projectId, UUID userId, CustomUserPrincipal principal) {
-        Project project = projectRepository.findByIdAndTenantId(projectId, principal.getTenantId())
-                .orElseThrow(() -> new BadRequestException("Project not found in this workspace"));
+    public void removeMember(UUID projectId, UUID userId, CustomUserPrincipal currentUser) {
+        Project project = projectRepository.findByIdAndTenantId(projectId, currentUser.getTenantId())
+                .orElseThrow(() -> new BadRequestException("Project not found"));
 
-        projectMemberRepository.deleteByTenantIdAndProjectIdAndUserId(
-                principal.getTenantId(),
-                project.getId(),
-                userId
-        );
+        ProjectMember assignment = projectMemberRepository
+                .findByTenantIdAndProjectIdAndUserId(
+                        currentUser.getTenantId(),
+                        project.getId(),
+                        userId
+                )
+                .orElseThrow(() -> new BadRequestException("Project member assignment not found"));
+
+        projectMemberRepository.delete(assignment);
     }
 }

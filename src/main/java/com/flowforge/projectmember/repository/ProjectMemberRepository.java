@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UUID> {
 
-    List<ProjectMember> findByTenantIdAndProjectId(UUID tenantId, UUID projectId);
+    List<ProjectMember> findByTenantIdAndProjectIdOrderByCreatedAtAsc(UUID tenantId, UUID projectId);
 
     Optional<ProjectMember> findByTenantIdAndProjectIdAndUserId(UUID tenantId, UUID projectId, UUID userId);
 
-    void deleteByTenantIdAndProjectIdAndUserId(UUID tenantId, UUID projectId, UUID userId);
+    boolean existsByTenantIdAndProjectIdAndUserId(UUID tenantId, UUID projectId, UUID userId);
 }

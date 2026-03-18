@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
-  CheckCircle2,
-  FolderKanban,
   LayoutGrid,
+  FolderKanban,
+  CheckCircle2,
+  Users,
+  Bell,
   Settings,
   UserRound,
-  Users,
+  LogOut,
   Zap,
 } from "lucide-react";
+import { clearToken } from "@/lib/auth";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -25,35 +27,48 @@ const items = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function isActive(href: string) {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  function handleLogout() {
+    clearToken();
+    router.replace("/login");
+  }
 
   return (
-    <aside className="flex h-screen w-[270px] flex-col border-r border-[#e6ebf3] bg-white px-5 py-6">
+    <aside className="hidden h-screen w-[280px] shrink-0 border-r border-slate-200 bg-white px-5 py-6 lg:flex lg:flex-col">
       <div className="flex items-center gap-3 px-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2563eb] text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f66f6] text-white shadow-[0_10px_24px_rgba(47,102,246,0.28)]">
           <Zap className="h-5 w-5" />
         </div>
+
         <div>
-          <h2 className="text-[18px] font-extrabold tracking-tight text-[#0f172a]">
+          <div className="text-[18px] font-extrabold tracking-tight text-slate-900">
             FlowForge
-          </h2>
-          <p className="text-[11px] font-medium text-[#64748b]">Enterprise</p>
+          </div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">
+            Enterprise
+          </div>
         </div>
       </div>
 
       <nav className="mt-10 space-y-2">
         {items.map((item) => {
           const Icon = item.icon;
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = isActive(item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-[18px] px-4 py-3 text-[15px] font-bold transition ${
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-bold transition ${
                 active
-                  ? "bg-[#f1f5f9] text-[#0f172a]"
-                  : "text-[#475569] hover:bg-[#f8fafc]"
+                  ? "bg-[#eef4ff] text-[#2f66f6]"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -63,21 +78,29 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto space-y-3 px-2">
-        <div className="rounded-[22px] bg-[#0f172a] px-5 py-5 text-white">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/70">
+      <div className="mt-auto space-y-4">
+        <div className="rounded-[28px] bg-[#071a4b] p-6 text-white shadow-[0_10px_30px_rgba(7,26,75,0.18)]">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/70">
             Pro Plan
           </p>
-          <h3 className="mt-3 text-[18px] font-extrabold leading-snug">
-            Unlock advanced team collaboration
-          </h3>
-          <button
-            type="button"
-            className="mt-4 rounded-full bg-white px-4 py-2 text-[13px] font-extrabold text-[#0f172a]"
-          >
+          <p className="mt-4 text-[17px] font-extrabold leading-8">
+            Unlock advanced
+            <br />
+            team collaboration
+          </p>
+          <button className="mt-5 rounded-full bg-white px-5 py-3 text-[14px] font-extrabold text-slate-900">
             Upgrade
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[15px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </aside>
   );

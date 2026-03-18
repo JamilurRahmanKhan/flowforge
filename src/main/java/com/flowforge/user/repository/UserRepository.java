@@ -8,7 +8,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByTenantIdAndEmail(UUID tenantId, String email);
+
     Optional<User> findByIdAndTenantId(UUID id, UUID tenantId);
+
+    Optional<User> findByTenantIdAndEmail(UUID tenantId, String email);
+
+    Optional<User> findByTenantIdAndEmailIgnoreCase(UUID tenantId, String email);
+
+    boolean existsByTenantIdAndEmail(UUID tenantId, String email);
+
+    boolean existsByTenantIdAndEmailIgnoreCase(UUID tenantId, String email);
+
     List<User> findAllByTenantIdOrderByCreatedAtDesc(UUID tenantId);
 }

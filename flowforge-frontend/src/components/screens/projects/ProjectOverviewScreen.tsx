@@ -1,274 +1,234 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ChevronLeft, MoreHorizontal, Archive, Plus } from "lucide-react";
-import { getProjectById, updateProject, archiveProject } from "@/features/projects/api";
+import Link from "next/link";
+import { getProjectById } from "@/features/projects/api";
 import type { Project } from "@/features/projects/types";
 
 export default function ProjectOverviewScreen({ id }: { id: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [visibility, setVisibility] = useState("PUBLIC");
-  const [defaultWorkflow, setDefaultWorkflow] = useState("Standard Agile (Kanban)");
   const [error, setError] = useState("");
 
-  async function load() {
-    try {
-      setLoading(true);
-      const data = await getProjectById(id);
-      setProject(data);
-      setName(data.name);
-      setDescription(data.description || "");
-      setVisibility(data.visibility);
-      setDefaultWorkflow(data.defaultWorkflow);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load project");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getProjectById(id);
+        setProject(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load project");
+      } finally {
+        setLoading(false);
+      }
+    }
+
     load();
   }, [id]);
 
-  async function handleSave() {
-    if (!project) return;
-
-    try {
-      const updated = await updateProject(project.id, {
-        name,
-        description,
-        status: project.status,
-        visibility,
-        defaultWorkflow,
-      });
-      setProject(updated);
-      setEditing(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update project");
-    }
-  }
-
-  async function handleArchive() {
-    if (!project) return;
-
-    try {
-      const archived = await archiveProject(project.id);
-      setProject(archived);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to archive project");
-    }
-  }
-
   if (loading) {
-    return <div className="p-6">Loading project...</div>;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center text-slate-500">
+        Loading project...
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="p-6 text-rose-700">{error}</div>;
-  }
-
-  if (!project) {
-    return <div className="p-6">Project not found.</div>;
+  if (error || !project) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6">
+        <div className="max-w-md rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+          {error || "Project not found"}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#f8fafc] pb-28 shadow-2xl lg:max-w-5xl lg:shadow-none">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 pb-3 pt-10">
+    <div className="rounded-[34px] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start justify-between border-b border-slate-200 px-8 py-7">
+        <div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/projects"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                {project.name}
-              </h1>
-              <p className="text-xs font-medium text-slate-400">{project.key}</p>
-            </div>
+            <h1 className="text-[34px] font-extrabold tracking-tight text-slate-900">
+              {project.name}
+            </h1>
+            <span className="rounded-full bg-[#dff3e7] px-4 py-1 text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#15924f]">
+              {project.status}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleArchive}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600"
-            >
-              <Archive className="h-4 w-4" />
-            </button>
-            <button className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </div>
+          <p className="mt-3 text-[20px] font-semibold text-slate-400">
+            {project.key}
+          </p>
+
+          {project.description ? (
+            <p className="mt-4 max-w-3xl text-[18px] font-medium text-slate-500">
+              {project.description}
+            </p>
+          ) : null}
         </div>
 
-        <nav className="overflow-x-auto">
-          <div className="flex min-w-max px-4">
-            {["Overview", "Board", "List", "Members", "Activity"].map((item, index) => (
-              <div
-                key={item}
-                className={`relative flex items-center justify-center px-4 py-3.5 ${
-                  index === 0 ? "text-[#1f68f9]" : "text-slate-500"
-                }`}
-              >
-                <p className={`text-sm ${index === 0 ? "font-bold" : "font-semibold"}`}>{item}</p>
-                {index === 0 ? (
-                  <div className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-[#1f68f9]" />
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </nav>
-      </header>
-
-      <div className="border-b border-slate-200 bg-white px-4 py-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Project Completion
-          </span>
-          <span className="rounded-full bg-[#1f68f9]/10 px-2 py-0.5 text-[11px] font-bold text-[#1f68f9]">
-            68%
-          </span>
-        </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-[68%] rounded-full bg-[#1f68f9]" />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/projects"
+            className="rounded-full border border-slate-200 px-6 py-3 text-[15px] font-bold text-slate-600 transition hover:bg-slate-50"
+          >
+            Back
+          </Link>
+          <button className="rounded-full border border-slate-200 px-6 py-3 text-[15px] font-bold text-slate-600 transition hover:bg-slate-50">
+            Archive
+          </button>
+          <button className="rounded-full border border-rose-200 px-6 py-3 text-[15px] font-bold text-rose-600 transition hover:bg-rose-50">
+            Delete
+          </button>
         </div>
       </div>
 
-      <main className="flex flex-col gap-5 p-4">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-slate-900">Description</h3>
-              <p className="text-[11px] text-slate-500">Project basics</p>
-            </div>
+      <div className="border-b border-slate-200 px-8">
+        <div className="flex items-center gap-8">
+          {["Overview", "Board", "List", "Members", "Activity"].map((item, index) => (
             <button
-              onClick={() => setEditing((prev) => !prev)}
-              className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600"
-            >
-              {editing ? "Close" : "Edit"}
-            </button>
-          </div>
-
-          {editing ? (
-            <div className="space-y-4">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-[#1f68f9]"
-              />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 p-4 outline-none focus:border-[#1f68f9]"
-                rows={4}
-              />
-              <select
-                value={visibility}
-                onChange={(e) => setVisibility(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-[#1f68f9]"
-              >
-                <option value="PUBLIC">PUBLIC</option>
-                <option value="PRIVATE">PRIVATE</option>
-              </select>
-              <select
-                value={defaultWorkflow}
-                onChange={(e) => setDefaultWorkflow(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-[#1f68f9]"
-              >
-                <option>Standard Agile (Kanban)</option>
-                <option>Scrum Sprint Cycle</option>
-                <option>Bug Tracking Only</option>
-              </select>
-
-              <button
-                onClick={handleSave}
-                className="rounded-xl bg-[#1f68f9] px-5 py-3 text-sm font-bold text-white"
-              >
-                Save Changes
-              </button>
-            </div>
-          ) : (
-            <p className="text-[14px] leading-relaxed text-slate-600">
-              {project.description || "No description added yet."}
-            </p>
-          )}
-        </section>
-
-        <section className="grid grid-cols-2 gap-3">
-          {[
-            ["Open", "12"],
-            ["In Progress", "05"],
-            ["In Review", "03"],
-            ["Done", "28"],
-          ].map(([label, value], idx) => (
-            <div
-              key={label}
-              className={`flex aspect-[1.3/1] flex-col justify-between rounded-2xl border p-4 ${
-                idx === 3
-                  ? "border-emerald-100 bg-emerald-50"
-                  : "border-slate-200 bg-white"
+              key={item}
+              className={`border-b-2 px-0 py-5 text-[16px] font-bold transition ${
+                index === 0
+                  ? "border-[#2f66f6] text-[#2f66f6]"
+                  : "border-transparent text-slate-500"
               }`}
             >
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                {label}
-              </span>
-              <div className="flex items-end justify-between">
-                <span
-                  className={`text-2xl font-bold ${
-                    idx === 1
-                      ? "text-[#1f68f9]"
-                      : idx === 2
-                      ? "text-amber-500"
-                      : idx === 3
-                      ? "text-emerald-600"
-                      : "text-slate-900"
-                  }`}
-                >
-                  {value}
-                </span>
-              </div>
-            </div>
+              {item}
+            </button>
           ))}
-        </section>
+        </div>
+      </div>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="font-bold text-slate-900">Recent Tasks</h3>
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 rounded-full bg-[#1f68f9] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm">
-                <Plus className="h-3.5 w-3.5" />
-                New Task
-              </button>
-              <button className="text-xs font-bold text-slate-400">See All</button>
+      <div className="px-8 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <p className="text-[14px] font-extrabold uppercase tracking-[0.22em] text-[#91a3c5]">
+              Project Summary
+            </p>
+            <h2 className="mt-3 text-[46px] font-extrabold tracking-tight text-slate-900">
+              Overview
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button className="rounded-full border border-slate-200 px-6 py-3 text-[15px] font-bold text-slate-600 transition hover:bg-slate-50">
+              Edit Project
+            </button>
+            <button className="rounded-full bg-[#2f66f6] px-6 py-3 text-[15px] font-extrabold text-white shadow-[0_12px_24px_rgba(47,102,246,0.24)] transition hover:scale-[1.01]">
+              + Add Task
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+              Total Tasks
+            </p>
+            <p className="mt-5 text-[56px] font-extrabold tracking-tight text-slate-900">
+              0
+            </p>
+            <div className="mt-6 h-2 rounded-full bg-[#e9eff8]">
+              <div className="h-2 w-full rounded-full bg-[#2f66f6]" />
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {["Design system audit", "Onboarding flow refactor"].map((task, idx) => (
-              <div
-                key={task}
-                className={`flex items-center gap-3 p-4 ${idx === 0 ? "border-b border-slate-100" : ""}`}
-              >
-                <div className="h-5 w-5 rounded-full border-2 border-[#1f68f9]" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{task}</p>
-                  <span className="mt-1 inline-block rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-red-600">
-                    High Priority
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+              To Do
+            </p>
+            <p className="mt-5 text-[56px] font-extrabold tracking-tight text-slate-900">
+              0
+            </p>
+            <div className="mt-6 h-2 rounded-full bg-[#e9eff8]">
+              <div className="h-2 w-full rounded-full bg-slate-400" />
+            </div>
           </div>
-        </section>
-      </main>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+              In Progress
+            </p>
+            <p className="mt-5 text-[56px] font-extrabold tracking-tight text-slate-900">
+              0
+            </p>
+            <div className="mt-6 h-2 rounded-full bg-[#e9eff8]">
+              <div className="h-2 w-full rounded-full bg-[#f59e0b]" />
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+              Done
+            </p>
+            <p className="mt-5 text-[56px] font-extrabold tracking-tight text-slate-900">
+              0
+            </p>
+            <div className="mt-6 h-2 rounded-full bg-[#e9eff8]">
+              <div className="h-2 w-full rounded-full bg-[#22c55e]" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <h3 className="text-[24px] font-extrabold tracking-tight text-slate-900">
+              Recent Tasks
+            </h3>
+
+            <div className="mt-8 flex min-h-[220px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-[#f8fbff] text-[18px] font-semibold text-slate-400">
+              No tasks yet for this project.
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+            <h3 className="text-[24px] font-extrabold tracking-tight text-slate-900">
+              Project Info
+            </h3>
+
+            <div className="mt-8 space-y-7">
+              <div>
+                <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+                  Project Key
+                </p>
+                <p className="mt-2 text-[18px] font-bold text-slate-900">
+                  {project.key}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+                  Visibility
+                </p>
+                <p className="mt-2 text-[18px] font-bold uppercase text-slate-900">
+                  {project.visibility}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+                  Default Workflow
+                </p>
+                <p className="mt-2 text-[18px] font-bold text-slate-900">
+                  {project.defaultWorkflow}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[14px] font-extrabold uppercase tracking-[0.2em] text-[#91a3c5]">
+                  Next Due Date
+                </p>
+                <p className="mt-2 text-[18px] font-bold text-slate-900">
+                  No due date
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

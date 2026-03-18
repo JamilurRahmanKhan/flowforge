@@ -1,36 +1,24 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import DashboardShell from "@/components/layout/DashboardShell";
-import { getToken } from "@/lib/auth";
+import type { ReactNode } from "react";
+import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  return (
+    <div className="min-h-screen bg-[#f4f7fb]">
+      <div className="flex min-h-screen">
+        <Sidebar />
 
-  useEffect(() => {
-    const token = getToken();
-
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    setChecking(false);
-  }, [router]);
-
-  if (checking) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] text-sm font-semibold text-slate-500">
-        Loading workspace...
+        <div className="min-w-0 flex-1 lg:pl-0">
+          <Topbar />
+          <main className="px-4 pb-6 pt-4 sm:px-6 lg:px-8 lg:pb-8 lg:pt-6">
+            {children}
+          </main>
+        </div>
       </div>
-    );
-  }
-
-  return <DashboardShell>{children}</DashboardShell>;
+    </div>
+  );
 }

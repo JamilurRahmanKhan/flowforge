@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { Search, Plus, MoreHorizontal, ChevronDown } from "lucide-react";
 import type { Project } from "@/features/projects/types";
-import ProjectsEmptyState from "./ProjectsEmptyState";
 
 type Props = {
   projects: Project[];
   tab: "ACTIVE" | "ARCHIVED";
   search: string;
   onSearchChange: (value: string) => void;
-  onTabChange: (tab: "ACTIVE" | "ARCHIVED") => void;
+  onTabChange: (value: "ACTIVE" | "ARCHIVED") => void;
   onOpenCreate: () => void;
   onProjectStatusChanged: () => void;
   sortBy: "RECENT" | "NAME_ASC" | "NAME_DESC";
@@ -18,123 +18,25 @@ type Props = {
   isSearchEmpty: boolean;
 };
 
-function formatUpdatedAt(value?: string | null) {
-  if (!value) return "Recently updated";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Recently updated";
-  return `Updated ${date.toLocaleDateString()}`;
+function getProjectInitial(name: string) {
+  return name?.trim()?.charAt(0)?.toUpperCase() || "P";
 }
 
-function progressValue(project: Project) {
-  if (project.status === "ARCHIVED") return 100;
+function formatUpdatedAt(date?: string) {
+  if (!date) return "Updated recently";
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "Updated recently";
+
+  return `Updated ${parsed.toLocaleDateString()}`;
+}
+
+function getProgress(_project: Project) {
   return 74;
 }
 
-function progressLabel(project: Project) {
-  if (project.status === "ARCHIVED") return "Archived";
-  return "12 Open Tasks";
-}
-
-function statusLabel(project: Project) {
-  if (project.status === "ARCHIVED") return "ARCHIVED";
-  return "IN PROGRESS";
-}
-
-function statusClass(project: Project) {
-  if (project.status === "ARCHIVED") {
-    return "bg-slate-100 text-slate-600";
-  }
-  return "bg-emerald-100 text-emerald-700";
-}
-
-function ProjectCard({
-  project,
-}: {
-  project: Project;
-}) {
-  const progress = progressValue(project);
-
-  return (
-    <Link
-      href={`/projects/${project.id}`}
-      className="block rounded-[28px] border border-[#e7edf6] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#dfeafe] text-[22px] font-extrabold text-[#2563eb]">
-            {project.name?.slice(0, 1)?.toUpperCase() || "P"}
-          </div>
-
-          <div>
-            <h3 className="text-[18px] font-extrabold tracking-tight text-[#0f172a]">
-              {project.name}
-            </h3>
-            <p className="mt-1 text-[14px] font-medium text-[#8a94a6]">
-              {project.key}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="rounded-full p-2 text-[#c0cad9]"
-          onClick={(e) => e.preventDefault()}
-        >
-          •••
-        </button>
-      </div>
-
-      <div className="mt-8">
-        <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
-          Progress
-        </p>
-
-        <div className="mt-3 flex items-center gap-3">
-          <span className="text-[18px] font-extrabold text-[#0f172a]">
-            {progress}%
-          </span>
-          <span className="text-[14px] font-bold text-[#2563eb]">
-            {progressLabel(project)}
-          </span>
-        </div>
-
-        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#e9eef6]">
-          <div
-            className="h-full rounded-full bg-[#2563eb]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="mt-6 flex items-center justify-between border-t border-[#edf2f7] pt-5">
-        <div className="flex items-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ecd0ba] text-[12px] font-extrabold text-[#475569]">
-            A
-          </div>
-          <div className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#d8c1a3] text-[12px] font-extrabold text-[#475569]">
-            B
-          </div>
-          <div className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f5f9] text-[12px] font-extrabold text-[#475569]">
-            +3
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <span
-            className={`rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.16em] ${statusClass(
-              project
-            )}`}
-          >
-            {statusLabel(project)}
-          </span>
-
-          <span className="text-[13px] font-medium italic text-[#94a3b8]">
-            {formatUpdatedAt(project.createdAt)}
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
+function getOpenTasks(_project: Project) {
+  return 12;
 }
 
 export default function ProjectsListDesktop({
@@ -151,80 +53,175 @@ export default function ProjectsListDesktop({
 }: Props) {
   return (
     <div className="hidden lg:block">
-      <section className="rounded-[36px] bg-white px-9 py-9 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="text-[52px] font-extrabold leading-none tracking-tight text-[#0b132b]">Projects</h1>
-            <p className="mt-5 text-[18px] font-medium text-[#64748b]">Manage active and archived projects across your workspace.</p>
-          </div>
-          <button type="button" onClick={onOpenCreate} className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#2563eb] text-[38px] leading-none text-white shadow-[0_20px_40px_rgba(37,99,235,0.22)]">
-            +
+      <div className="rounded-[34px] bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+        <div className="flex items-start justify-end">
+          <button
+            type="button"
+            onClick={onOpenCreate}
+            className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#2f66f6] text-white shadow-[0_16px_32px_rgba(47,102,246,0.28)] transition hover:scale-[1.02]"
+          >
+            <Plus className="h-8 w-8" />
           </button>
         </div>
 
-        <div className="mt-10 rounded-[30px] border border-[#edf2f7] bg-[#f8fafc] p-5">
-          <div className="rounded-[22px] border border-[#dde6f1] bg-white px-5 py-4">
-            <div className="flex items-center gap-3">
-              <span className="text-[22px] text-[#94a3b8]">⌕</span>
-              <input
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search your projects..."
-                className="w-full border-0 bg-transparent text-[18px] font-medium text-[#334155] outline-none placeholder:text-[#94a3b8]"
-              />
-            </div>
+        <div className="mt-8 rounded-[30px] border border-slate-200 bg-[#f8fbff] p-5">
+          <div className="relative">
+            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search your projects..."
+              className="h-16 w-full rounded-[22px] border border-slate-200 bg-white pl-14 pr-4 text-[20px] font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#2f66f6]"
+            />
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-6">
+          <div className="mt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => onTabChange("ACTIVE")}
-                className={`rounded-full px-8 py-4 text-[16px] font-extrabold ${
-                  tab === "ACTIVE" ? "bg-[#0f1f5c] text-white" : "border border-[#d9e2ef] bg-white text-[#475569]"
+                className={`rounded-full px-8 py-4 text-[16px] font-extrabold transition ${
+                  tab === "ACTIVE"
+                    ? "bg-[#11286f] text-white"
+                    : "border border-slate-200 bg-white text-slate-500"
                 }`}
               >
                 Active
               </button>
+
               <button
                 type="button"
                 onClick={() => onTabChange("ARCHIVED")}
-                className={`rounded-full px-8 py-4 text-[16px] font-extrabold ${
-                  tab === "ARCHIVED" ? "bg-[#0f1f5c] text-white" : "border border-[#d9e2ef] bg-white text-[#475569]"
+                className={`rounded-full px-8 py-4 text-[16px] font-extrabold transition ${
+                  tab === "ARCHIVED"
+                    ? "bg-[#11286f] text-white"
+                    : "border border-slate-200 bg-white text-slate-500"
                 }`}
               >
                 Archived
               </button>
             </div>
 
-            <div className="flex items-center gap-4 border-l border-[#d9e2ef] pl-8">
-              <label htmlFor="projects-sort" className="text-[16px] font-bold text-[#475569]">Sort by</label>
-              <select
-                id="projects-sort"
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as "RECENT" | "NAME_ASC" | "NAME_DESC")}
-                className="border-0 bg-transparent text-[16px] font-bold text-[#334155] outline-none"
+            <div className="flex items-center gap-4 border-l border-slate-200 pl-8 text-[16px] font-bold text-slate-600">
+              <span>Sort by</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (sortBy === "RECENT") onSortChange("NAME_ASC");
+                  else if (sortBy === "NAME_ASC") onSortChange("NAME_DESC");
+                  else onSortChange("RECENT");
+                }}
+                className="flex items-center gap-2"
               >
-                <option value="RECENT">Recent</option>
-                <option value="NAME_ASC">Name A-Z</option>
-                <option value="NAME_DESC">Name Z-A</option>
-              </select>
+                {sortBy === "RECENT"
+                  ? "Recent"
+                  : sortBy === "NAME_ASC"
+                  ? "Name A-Z"
+                  : "Name Z-A"}
+                <ChevronDown className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
 
         <div className="mt-8">
-          {isTabEmpty || isSearchEmpty ? (
-            <ProjectsEmptyState tab={tab} isSearchEmpty={isSearchEmpty} onCreate={onOpenCreate} />
+          {isSearchEmpty ? (
+            <div className="rounded-[28px] border border-dashed border-slate-200 bg-[#f8fbff] px-8 py-16 text-center text-[18px] font-semibold text-slate-400">
+              No projects match your search.
+            </div>
+          ) : isTabEmpty ? (
+            <div className="rounded-[28px] border border-dashed border-slate-200 bg-[#f8fbff] px-8 py-16 text-center text-[18px] font-semibold text-slate-400">
+              No {tab === "ACTIVE" ? "active" : "archived"} projects found.
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 2xl:grid-cols-3">
+              {projects.map((project) => {
+                const initial = getProjectInitial(project.name);
+                const progress = getProgress(project);
+                const openTasks = getOpenTasks(project);
+
+                return (
+                  <Link
+                    key={project.id}
+                    href={`/projects/${project.id}`}
+                    className="group rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e9f0ff] text-[30px] font-extrabold text-[#2f66f6]">
+                          {initial}
+                        </div>
+                        <div>
+                          <h3 className="text-[26px] font-extrabold tracking-tight text-slate-900">
+                            {project.name}
+                          </h3>
+                          <p className="mt-1 text-[18px] font-semibold text-slate-400">
+                            {project.key}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => e.preventDefault()}
+                        className="text-slate-300"
+                      >
+                        <MoreHorizontal className="h-6 w-6" />
+                      </button>
+                    </div>
+
+                    <div className="mt-8">
+                      <p className="text-[14px] font-extrabold uppercase tracking-[0.22em] text-[#91a3c5]">
+                        Progress
+                      </p>
+
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-[20px] font-extrabold text-slate-900">
+                          {progress}%
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[20px] font-extrabold text-[#2f66f6]">
+                          {openTasks} Open Tasks
+                        </span>
+                      </div>
+
+                      <div className="mt-5 h-3 rounded-full bg-slate-100">
+                        <div
+                          className="h-3 rounded-full bg-[#2f66f6]"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-5">
+                      <div className="flex -space-x-2">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#f3c9ab] text-sm font-extrabold text-slate-700">
+                          A
+                        </div>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#d9be97] text-sm font-extrabold text-slate-700">
+                          B
+                        </div>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-sm font-extrabold text-slate-600">
+                          +3
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="inline-flex rounded-full bg-[#dff3e7] px-5 py-2 text-[14px] font-extrabold uppercase tracking-[0.18em] text-[#15924f]">
+                          {project.status === "ARCHIVED" ? "Archived" : "In Progress"}
+                        </div>
+                        <p className="mt-3 text-[16px] font-medium italic text-slate-400">
+                          {formatUpdatedAt(project.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }
