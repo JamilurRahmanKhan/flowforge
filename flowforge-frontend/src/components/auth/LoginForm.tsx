@@ -28,7 +28,7 @@ export default function LoginForm() {
         password,
       });
 
-      saveToken(result.accessToken);
+      saveToken(result.token);
       router.push("/dashboard");
     } catch (err) {
       const message =

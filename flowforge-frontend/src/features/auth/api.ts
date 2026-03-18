@@ -23,21 +23,30 @@ export type AuthResponse = {
   organizationId?: string;
   organizationName?: string;
   organizationSlug?: string;
+  message?: string;
 };
 
-async function parseResponse<T>(response: Response): Promise<T> {
+type RawLoginResponse = {
+  accessToken: string;
+  tokenType: string;
+  userId: string;
+  tenantId: string;
+  email: string;
+  role: string;
+};
+
+type RawRegisterResponse = {
+  organizationId?: string;
+  organizationName?: string;
+  organizationSlug?: string;
+  ownerId?: string;
+  ownerEmail?: string;
+  message?: string;
+};
+
+async function parseJson(response: Response) {
   const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-
-  if (!response.ok) {
-    const message =
-      data?.message ||
-      data?.error ||
-      `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-
-  return data as T;
+  return text ? JSON.parse(text) : {};
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
@@ -49,12 +58,29 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
     body: JSON.stringify(payload),
   });
 
-  return parseResponse<AuthResponse>(response);
+  const data = (await parseJson(response)) as RawLoginResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        data?.error ||
+        `Request failed with status ${response.status}`
+    );
+  }
+
+  return {
+    token: data.accessToken,
+    userId: data.userId,
+    tenantId: data.tenantId,
+    email: data.email,
+    role: data.role,
+  };
 }
 
-export async function register(
-  payload: RegisterPayload
-): Promise<AuthResponse> {
+export async function register(payload: RegisterPayload): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: "POST",
     headers: {
@@ -63,8 +89,32 @@ export async function register(
     body: JSON.stringify(payload),
   });
 
-  return parseResponse<AuthResponse>(response);
+  const data = (await parseJson(response)) as RawRegisterResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        data?.error ||
+        `Request failed with status ${response.status}`
+    );
+  }
+
+  return {
+    token: "",
+    userId: data.ownerId || "",
+    tenantId: data.organizationId || "",
+    email: data.ownerEmail || "",
+    role: "",
+    organizationId: data.organizationId,
+    organizationName: data.organizationName,
+    organizationSlug: data.organizationSlug,
+    message: data.message || "Workspace created successfully",
+  };
 }
 
 export const loginRequest = login;
 export const registerRequest = register;
+export const registerOrg = register;

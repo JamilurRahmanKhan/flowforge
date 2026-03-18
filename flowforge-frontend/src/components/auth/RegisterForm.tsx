@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthCard from "./AuthCard";
-import { registerOrg } from "@/features/auth/api";
+import { register } from "@/features/auth/api";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
-      const result = await registerOrg({
+      const result = await register({
         organizationName: organizationName.trim(),
         slug: slug.trim(),
         ownerName: ownerName.trim(),
