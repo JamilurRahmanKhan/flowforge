@@ -1,21 +1,9 @@
 import { apiClient } from "@/lib/api-client";
-import type { Project } from "./types";
-
-export type CreateProjectPayload = {
-  name: string;
-  key: string;
-  description?: string;
-  visibility: string;
-  defaultWorkflow: string;
-};
-
-export type UpdateProjectPayload = {
-  name: string;
-  description?: string;
-  status: string;
-  visibility: string;
-  defaultWorkflow: string;
-};
+import type {
+  CreateProjectPayload,
+  Project,
+  UpdateProjectPayload,
+} from "./types";
 
 export async function getProjects() {
   return apiClient<Project[]>("/api/projects");

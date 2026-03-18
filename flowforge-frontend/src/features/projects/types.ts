@@ -14,14 +14,14 @@ export type Project = {
 export type CreateProjectPayload = {
   name: string;
   key: string;
-  description: string;
+  description?: string;
   visibility: string;
   defaultWorkflow: string;
 };
 
 export type UpdateProjectPayload = {
   name: string;
-  description: string;
+  description?: string;
   status?: string;
   visibility?: string;
   defaultWorkflow?: string;
