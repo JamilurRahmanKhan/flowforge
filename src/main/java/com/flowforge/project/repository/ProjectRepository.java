@@ -8,7 +8,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
+
     List<Project> findByTenantIdOrderByCreatedAtDesc(UUID tenantId);
-    boolean existsByTenantIdAndKey(UUID tenantId, String key);
+
     Optional<Project> findByIdAndTenantId(UUID id, UUID tenantId);
+
+    boolean existsByTenantIdAndKey(UUID tenantId, String key);
+
+    long countByTenantId(UUID tenantId);
+
+    long countByTenantIdAndStatus(UUID tenantId, String status);
 }
