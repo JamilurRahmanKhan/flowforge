@@ -16,6 +16,8 @@ import {
   getAssignedProjectMembers,
   getAvailableProjectMembers,
 } from "@/features/project-members/api";
+import { getProjectActivity } from "@/features/activity/api";
+import type { ActivityItem } from "@/features/activity/types";
 
 import ProjectDetailsShell from "./ProjectDetailsShell";
 import ProjectOverviewDesktop from "./ProjectOverviewDesktop";
@@ -33,7 +35,6 @@ import CreateTaskModal from "./CreateTaskModal";
 import EditTaskModal from "./EditTaskModal";
 import DeleteTaskModal from "./DeleteTaskModal";
 import ProjectToasts, { type ProjectToast } from "./ProjectToasts";
-import { buildProjectActivity } from "@/features/activity/utils";
 import ProjectActivityDesktop from "./ProjectActivityDesktop";
 import ProjectActivityMobile from "./ProjectActivityMobile";
 
@@ -55,9 +56,11 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [assignedMembers, setAssignedMembers] = useState<ProjectMember[]>([]);
   const [availableMembers, setAvailableMembers] = useState<ProjectMember[]>([]);
+  const [projectActivity, setProjectActivity] = useState<ActivityItem[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [membersLoaded, setMembersLoaded] = useState(false);
   const [membersAttempted, setMembersAttempted] = useState(false);
 
@@ -84,27 +87,33 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const memberMap = useMemo(() => {
-    const map: Record<string, ProjectMember> = {};
-
-    for (const member of availableMembers) {
-      map[member.userId] = member;
-    }
+  const memberNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
 
     for (const member of assignedMembers) {
-      map[member.userId] = member;
+      map[member.userId] = member.name;
+    }
+
+    for (const member of availableMembers) {
+      map[member.userId] = member.name;
     }
 
     return map;
   }, [assignedMembers, availableMembers]);
 
-  const memberNameMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    Object.values(memberMap).forEach((member) => {
-      map[member.userId] = member.name;
-    });
+  const memberMap = useMemo(() => {
+    const map: Record<string, ProjectMember> = {};
+
+    for (const member of assignedMembers) {
+      map[member.userId] = member;
+    }
+
+    for (const member of availableMembers) {
+      map[member.userId] = member;
+    }
+
     return map;
-  }, [memberMap]);
+  }, [assignedMembers, availableMembers]);
 
   function pushToast(toast: Omit<ProjectToast, "id">) {
     const nextId = toastIdRef.current++;
@@ -124,9 +133,36 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     setTasks(taskData);
   }
 
+  async function loadProjectActivityOnly(projectId: string) {
+    try {
+      setActivityLoading(true);
+      const data = await getProjectActivity(projectId, 25);
+      setProjectActivity(data);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load activity";
+
+      pushToast({
+        type: "error",
+        title: "Failed to load activity",
+        description: message,
+      });
+    } finally {
+      setActivityLoading(false);
+    }
+  }
+
   async function refreshProjectTasks() {
     if (!project) return;
     await loadTasksOnly(project.id);
+  }
+
+  async function refreshProjectData() {
+    if (!project) return;
+    await Promise.all([
+      loadTasksOnly(project.id),
+      loadProjectActivityOnly(project.id),
+    ]);
   }
 
   async function loadMembersOnly() {
@@ -181,15 +217,17 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       setProject(projectData);
 
       try {
-        const [taskData, assigned, available] = await Promise.all([
+        const [taskData, assigned, available, activityData] = await Promise.all([
           getTasksByProject(id),
-          getAssignedProjectMembers(id).catch(() => []),
-          getAvailableProjectMembers(id).catch(() => []),
+          getAssignedProjectMembers(id).catch(() => [] as ProjectMember[]),
+          getAvailableProjectMembers(id).catch(() => [] as ProjectMember[]),
+          getProjectActivity(id, 25).catch(() => [] as ActivityItem[]),
         ]);
 
         setTasks(taskData);
         setAssignedMembers(assigned);
         setAvailableMembers(available);
+        setProjectActivity(activityData);
         setMembersLoaded(true);
       } catch (err) {
         const message =
@@ -252,6 +290,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       const updated = await archiveProject(project.id);
       setProject(updated);
       setOpenArchive(false);
+      await loadProjectActivityOnly(updated.id);
 
       pushToast({
         type: "success",
@@ -281,6 +320,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     try {
       const updated = await unarchiveProject(project.id);
       setProject(updated);
+      await loadProjectActivityOnly(updated.id);
 
       pushToast({
         type: "success",
@@ -325,7 +365,14 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   async function handleTaskStatusChange(task: Task) {
     try {
       const updated = await updateTaskStatus(task.id, nextStatus(task.status));
-      setTasks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+
+      setTasks((prev) =>
+        prev.map((item) => (item.id === updated.id ? updated : item))
+      );
+
+      if (project) {
+        await loadProjectActivityOnly(project.id);
+      }
 
       pushToast({
         type: "success",
@@ -359,8 +406,6 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       </div>
     );
   }
-
-  const activities = buildProjectActivity(project, tasks);
 
   let content: React.ReactNode;
 
@@ -456,21 +501,33 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         projectId={project.id}
         assignedMembers={assignedMembers}
         availableMembers={availableMembers}
-        onMembersChanged={loadMembersOnly}
+        onMembersChanged={async () => {
+          await loadMembersOnly();
+          await loadProjectActivityOnly(project.id);
+        }}
       />
     ) : (
       <ProjectMembersMobile
         projectId={project.id}
         assignedMembers={assignedMembers}
         availableMembers={availableMembers}
-        onMembersChanged={loadMembersOnly}
+        onMembersChanged={async () => {
+          await loadMembersOnly();
+          await loadProjectActivityOnly(project.id);
+        }}
       />
     );
   } else {
     content = isDesktop ? (
-      <ProjectActivityDesktop activities={activities} />
+      <ProjectActivityDesktop
+        activities={projectActivity}
+        loading={activityLoading}
+      />
     ) : (
-      <ProjectActivityMobile activities={activities} />
+      <ProjectActivityMobile
+        activities={projectActivity}
+        loading={activityLoading}
+      />
     );
   }
 
@@ -501,8 +558,10 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         open={openEdit}
         project={project}
         onClose={() => setOpenEdit(false)}
-        onUpdated={(updatedProject) => {
+        onUpdated={async (updatedProject) => {
           setProject(updatedProject);
+          await loadProjectActivityOnly(updatedProject.id);
+
           pushToast({
             type: "success",
             title: "Project updated",
@@ -540,8 +599,13 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         members={assignedMembers}
         onClose={() => setOpenCreateTask(false)}
         onCreated={async (createdTask) => {
-          await loadTasksOnly(project.id);
+          await Promise.all([
+            loadTasksOnly(project.id),
+            loadProjectActivityOnly(project.id),
+          ]);
+
           setActiveTaskId(createdTask.id);
+
           pushToast({
             type: "success",
             title: "Task created",
@@ -562,7 +626,12 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         task={editingTask}
         members={assignedMembers}
         onClose={() => setEditingTask(null)}
-        onUpdated={refreshProjectTasks}
+        onUpdated={async () => {
+          await Promise.all([
+            refreshProjectTasks(),
+            loadProjectActivityOnly(project.id),
+          ]);
+        }}
       />
 
       <DeleteTaskModal
@@ -570,8 +639,14 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         task={deletingTask}
         onClose={() => setDeletingTask(null)}
         onDeleted={async () => {
-          await refreshProjectTasks();
-          if (deletingTask && activeTaskId === deletingTask.id) {
+          const deletedTaskId = deletingTask?.id ?? null;
+
+          await Promise.all([
+            refreshProjectTasks(),
+            loadProjectActivityOnly(project.id),
+          ]);
+
+          if (deletedTaskId && activeTaskId === deletedTaskId) {
             setActiveTaskId(null);
           }
         }}

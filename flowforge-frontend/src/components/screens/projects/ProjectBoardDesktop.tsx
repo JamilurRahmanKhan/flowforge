@@ -6,8 +6,7 @@ import type { ProjectMember } from "@/features/project-members/types";
 
 type Props = {
   tasks: Task[];
-  memberMap: Record<string, ProjectMember>;
-  memberNameMap: Record<string, string>;
+  memberMap?: Record<string, ProjectMember>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
   onCreateTask: () => void;
@@ -38,7 +37,7 @@ function actionLabel(status: string) {
 
 function assigneeVisual(
   task: Task,
-  memberMap: Record<string, ProjectMember>
+  memberMap: Record<string, ProjectMember> = {}
 ): { label: string; initials: string; tone: string } {
   if (!task.assigneeId) {
     return {
@@ -48,7 +47,8 @@ function assigneeVisual(
     };
   }
 
-  const member = memberMap[task.assigneeId];
+  const member = memberMap?.[task.assigneeId];
+
   if (!member) {
     return {
       label: "Unknown member",
@@ -57,11 +57,12 @@ function assigneeVisual(
     };
   }
 
-  const initials = member.name
-    .split(" ")
-    .map((part) => part[0]?.toUpperCase())
-    .slice(0, 2)
-    .join("");
+  const initials =
+    member.name
+      ?.split(" ")
+      .map((part) => part[0]?.toUpperCase())
+      .slice(0, 2)
+      .join("") || "U";
 
   return {
     label: member.name,
@@ -75,7 +76,7 @@ function assigneeVisual(
 function BoardColumn({
   title,
   tasks,
-  memberMap,
+  memberMap = {},
   activeTaskId,
   onSelectTask,
   onStatusChanged,
@@ -84,7 +85,7 @@ function BoardColumn({
 }: {
   title: string;
   tasks: Task[];
-  memberMap: Record<string, ProjectMember>;
+  memberMap?: Record<string, ProjectMember>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
   onStatusChanged: (task: Task) => Promise<void>;
@@ -92,7 +93,7 @@ function BoardColumn({
   onDeleteTask: (task: Task) => void;
 }) {
   return (
-    <div className="min-w-[300px] rounded-[26px] border border-[#e6ebf3] bg-[#f8fafc] p-4">
+    <div className="min-w-[280px] rounded-[26px] border border-[#e6ebf3] bg-[#f8fafc] p-4">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-[16px] font-extrabold tracking-tight text-[#0f172a]">
           {title}
@@ -126,6 +127,7 @@ function BoardColumn({
                     <h4 className="line-clamp-2 text-[15px] font-extrabold text-[#0f172a]">
                       {task.title}
                     </h4>
+
                     <p className="mt-3 line-clamp-3 text-[13px] leading-6 text-[#64748b]">
                       {task.description || "No description provided for this task."}
                     </p>
@@ -143,7 +145,9 @@ function BoardColumn({
                   </button>
 
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-extrabold ${badge(task.status)}`}
+                    className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-extrabold ${badge(
+                      task.status
+                    )}`}
                   >
                     {task.status}
                   </span>
@@ -157,6 +161,7 @@ function BoardColumn({
                   >
                     {actionLabel(task.status)}
                   </button>
+
                   <button
                     type="button"
                     onClick={() => onEditTask(task)}
@@ -164,6 +169,7 @@ function BoardColumn({
                   >
                     Edit
                   </button>
+
                   <button
                     type="button"
                     onClick={() => onDeleteTask(task)}
@@ -187,7 +193,7 @@ function BoardColumn({
 
 export default function ProjectBoardDesktop({
   tasks,
-  memberMap,
+  memberMap = {},
   activeTaskId,
   onSelectTask,
   onCreateTask,
@@ -220,7 +226,7 @@ export default function ProjectBoardDesktop({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="overflow-x-auto">
-          <div className="flex min-w-[980px] gap-5">
+          <div className="flex min-w-[920px] gap-5">
             <BoardColumn
               title="To Do"
               tasks={grouped.TODO}
@@ -231,6 +237,7 @@ export default function ProjectBoardDesktop({
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
             />
+
             <BoardColumn
               title="In Progress"
               tasks={grouped.IN_PROGRESS}
@@ -241,6 +248,7 @@ export default function ProjectBoardDesktop({
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
             />
+
             <BoardColumn
               title="Done"
               tasks={grouped.DONE}

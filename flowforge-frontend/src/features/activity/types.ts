@@ -1,12 +1,12 @@
 export type ActivityItem = {
-  id: string;
-  type:
-    | "PROJECT_CREATED"
-    | "PROJECT_UPDATED"
-    | "PROJECT_ARCHIVED"
-    | "PROJECT_ACTIVE"
-    | "TASK_CREATED";
+  type: string;
   title: string;
   description: string;
-  timestamp: string;
+  createdAt: string;
+  projectId: string | null;
+  projectName: string | null;
+  taskId: string | null;
+  taskTitle: string | null;
+  userId: string | null;
+  userName: string | null;
 };

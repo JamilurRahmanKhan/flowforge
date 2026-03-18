@@ -4,9 +4,15 @@ import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
 import type { Task } from "@/features/tasks/types";
 import type { ProjectMember } from "@/features/project-members/types";
 
+function actionLabel(status: string) {
+  if (status === "TODO") return "Start";
+  if (status === "IN_PROGRESS") return "Mark Done";
+  return "Reset";
+}
+
 function assigneeVisual(
   task: Task,
-  memberMap: Record<string, ProjectMember>
+  memberMap: Record<string, ProjectMember> = {}
 ): { label: string; initials: string; tone: string } {
   if (!task.assigneeId) {
     return {
@@ -16,7 +22,8 @@ function assigneeVisual(
     };
   }
 
-  const member = memberMap[task.assigneeId];
+  const member = memberMap?.[task.assigneeId];
+
   if (!member) {
     return {
       label: "Unknown member",
@@ -25,11 +32,12 @@ function assigneeVisual(
     };
   }
 
-  const initials = member.name
-    .split(" ")
-    .map((part) => part[0]?.toUpperCase())
-    .slice(0, 2)
-    .join("");
+  const initials =
+    member.name
+      ?.split(" ")
+      .map((part) => part[0]?.toUpperCase())
+      .slice(0, 2)
+      .join("") || "U";
 
   return {
     label: member.name,
@@ -42,7 +50,7 @@ function assigneeVisual(
 
 export default function ProjectListTabDesktop({
   tasks,
-  memberMap,
+  memberMap = {},
   activeTaskId,
   onSelectTask,
   onCreateTask,
@@ -51,8 +59,7 @@ export default function ProjectListTabDesktop({
   onDeleteTask,
 }: {
   tasks: Task[];
-  memberMap: Record<string, ProjectMember>;
-  memberNameMap: Record<string, string>;
+  memberMap?: Record<string, ProjectMember>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
   onCreateTask: () => void;
@@ -65,12 +72,6 @@ export default function ProjectListTabDesktop({
     const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return bTime - aTime;
   });
-
-  function actionLabel(status: string) {
-    if (status === "TODO") return "Start";
-    if (status === "IN_PROGRESS") return "Mark Done";
-    return "Reset";
-  }
 
   return (
     <div className="space-y-6">
@@ -97,7 +98,7 @@ export default function ProjectListTabDesktop({
         <div className="overflow-hidden rounded-[28px] border border-[#e6ebf3] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
           <div className="overflow-x-auto">
             <div className="min-w-[1180px]">
-              <div className="grid grid-cols-[2.2fr_1fr_1fr_1.5fr_1.8fr] gap-4 border-b border-[#edf2f7] bg-[#f8fafc] px-6 py-4">
+              <div className="grid grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-4 border-b border-[#edf2f7] bg-[#f8fafc] px-6 py-4">
                 <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
                   Task
                 </div>
@@ -122,7 +123,7 @@ export default function ProjectListTabDesktop({
                   return (
                     <div
                       key={task.id}
-                      className={`grid grid-cols-[2.2fr_1fr_1fr_1.5fr_1.8fr] gap-4 border-b border-[#edf2f7] px-6 py-5 last:border-b-0 ${
+                      className={`grid grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-4 border-b border-[#edf2f7] px-6 py-5 last:border-b-0 ${
                         activeTaskId === task.id ? "bg-[#f8fbff]" : ""
                       }`}
                     >
@@ -141,19 +142,25 @@ export default function ProjectListTabDesktop({
                         </button>
                       </div>
 
-                      <div className="text-[13px] font-bold text-[#334155]">{task.status}</div>
+                      <div className="flex items-center text-[13px] font-bold text-[#334155]">
+                        {task.status}
+                      </div>
 
-                      <div className="text-[13px] font-bold text-[#334155]">
+                      <div className="flex items-center text-[13px] font-bold text-[#334155]">
                         {task.priority || "LOW"}
                       </div>
 
-                      <div className="flex items-center gap-2 text-[13px] font-bold text-[#334155]">
-                        <div
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-extrabold ${assignee.tone}`}
-                        >
-                          {assignee.initials}
+                      <div className="flex items-center">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-extrabold ${assignee.tone}`}
+                          >
+                            {assignee.initials}
+                          </div>
+                          <span className="text-[13px] font-bold text-[#334155]">
+                            {assignee.label}
+                          </span>
                         </div>
-                        <span>{assignee.label}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
