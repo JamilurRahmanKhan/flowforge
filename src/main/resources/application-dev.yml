@@ -17,6 +17,9 @@ spring:
       path: /h2-console
       settings:
         web-allow-others: false
+  devtools:
+    restart:
+      enabled: false
 
 logging:
   level:

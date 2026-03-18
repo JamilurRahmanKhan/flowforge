@@ -3,6 +3,7 @@
 import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
 import type { Project } from "@/features/projects/types";
 import type { Task } from "@/features/tasks/types";
+import type { ProjectMember } from "@/features/project-members/types";
 
 function StatCard({
   label,
@@ -45,9 +46,46 @@ function badgeClass(status: string) {
   return "bg-slate-100 text-slate-700";
 }
 
+function assigneeVisual(
+  task: Task,
+  memberMap: Record<string, ProjectMember>
+): { label: string; initials: string; tone: string } {
+  if (!task.assigneeId) {
+    return {
+      label: "Unassigned",
+      initials: "U",
+      tone: "bg-slate-100 text-slate-600",
+    };
+  }
+
+  const member = memberMap[task.assigneeId];
+  if (!member) {
+    return {
+      label: "Unknown member",
+      initials: "?",
+      tone: "bg-amber-100 text-amber-700",
+    };
+  }
+
+  const initials = member.name
+    .split(" ")
+    .map((part) => part[0]?.toUpperCase())
+    .slice(0, 2)
+    .join("");
+
+  return {
+    label: member.name,
+    initials,
+    tone: member.active
+      ? "bg-[#e9f0ff] text-[#2563eb]"
+      : "bg-slate-100 text-slate-600",
+  };
+}
+
 export default function ProjectOverviewDesktop({
   project,
   tasks,
+  memberMap,
   memberNameMap,
   activeTaskId,
   onSelectTask,
@@ -59,6 +97,7 @@ export default function ProjectOverviewDesktop({
 }: {
   project: Project;
   tasks: Task[];
+  memberMap: Record<string, ProjectMember>;
   memberNameMap: Record<string, string>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
@@ -73,6 +112,7 @@ export default function ProjectOverviewDesktop({
   const done = tasks.filter((task) => task.status === "DONE").length;
 
   const recentTasks = [...tasks].slice(0, 5);
+  const unassignedCount = tasks.filter((task) => !task.assigneeId).length;
 
   return (
     <div className="space-y-8">
@@ -104,11 +144,12 @@ export default function ProjectOverviewDesktop({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-5 gap-5">
         <StatCard label="Total Tasks" value={String(tasks.length)} accent="#2563eb" />
         <StatCard label="To Do" value={String(todo)} accent="#94a3b8" />
         <StatCard label="In Progress" value={String(inProgress)} accent="#f59e0b" />
         <StatCard label="Done" value={String(done)} accent="#22c55e" />
+        <StatCard label="Unassigned" value={String(unassignedCount)} accent="#64748b" />
       </div>
 
       <div className="grid grid-cols-[1.1fr_0.9fr] gap-6">
@@ -119,74 +160,80 @@ export default function ProjectOverviewDesktop({
 
           <div className="mt-6 space-y-4">
             {recentTasks.length > 0 ? (
-              recentTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`rounded-[20px] border px-5 py-4 ${
-                    activeTaskId === task.id
-                      ? "border-[#2563eb] bg-[#f8fbff]"
-                      : "border-[#eef2f7] bg-[#f8fafc]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <button
-                      type="button"
-                      onClick={() => onSelectTask(task.id)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
-                        {task.title}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#64748b]">
-                        {task.description || "No description provided."}
-                      </p>
+              recentTasks.map((task) => {
+                const assignee = assigneeVisual(task, memberMap);
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#64748b]">
-                        <span>
-                          Assignee:{" "}
-                          {task.assigneeId
-                            ? memberNameMap[task.assigneeId] || "Unknown member"
-                            : "Unassigned"}
-                        </span>
-                        <span>•</span>
-                        <span>Due: {formatDueDate(task.dueDate)}</span>
-                      </div>
-                    </button>
+                return (
+                  <div
+                    key={task.id}
+                    className={`rounded-[20px] border px-5 py-4 ${
+                      activeTaskId === task.id
+                        ? "border-[#2563eb] bg-[#f8fbff]"
+                        : "border-[#eef2f7] bg-[#f8fafc]"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={() => onSelectTask(task.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
+                          {task.title}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#64748b]">
+                          {task.description || "No description provided."}
+                        </p>
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] ${badgeClass(
-                        task.status
-                      )}`}
-                    >
-                      {task.status}
-                    </span>
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] font-bold text-[#64748b]">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-extrabold ${assignee.tone}`}
+                            >
+                              {assignee.initials}
+                            </div>
+                            <span>{assignee.label}</span>
+                          </div>
+                          <span>•</span>
+                          <span>Due: {formatDueDate(task.dueDate)}</span>
+                        </div>
+                      </button>
+
+                      <span
+                        className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] ${badgeClass(
+                          task.status
+                        )}`}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onStatusChanged(task)}
+                        className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
+                      >
+                        {actionLabel(task.status)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEditTask(task)}
+                        className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTask(task)}
+                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onStatusChanged(task)}
-                      className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
-                    >
-                      {actionLabel(task.status)}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onEditTask(task)}
-                      className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteTask(task)}
-                      className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="rounded-[20px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-5 py-8 text-center text-[14px] font-medium text-[#94a3b8]">
                 No tasks yet for this project.
@@ -224,6 +271,15 @@ export default function ProjectOverviewDesktop({
                 </p>
                 <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
                   {project.defaultWorkflow || "KANBAN"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                  Assigned Members
+                </p>
+                <p className="mt-2 text-[16px] font-bold text-[#0f172a]">
+                  {Object.keys(memberNameMap).length}
                 </p>
               </div>
 

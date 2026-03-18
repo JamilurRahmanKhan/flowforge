@@ -2,10 +2,47 @@
 
 import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
 import type { Task } from "@/features/tasks/types";
+import type { ProjectMember } from "@/features/project-members/types";
+
+function assigneeVisual(
+  task: Task,
+  memberMap: Record<string, ProjectMember>
+): { label: string; initials: string; tone: string } {
+  if (!task.assigneeId) {
+    return {
+      label: "Unassigned",
+      initials: "U",
+      tone: "bg-slate-100 text-slate-600",
+    };
+  }
+
+  const member = memberMap[task.assigneeId];
+  if (!member) {
+    return {
+      label: "Unknown member",
+      initials: "?",
+      tone: "bg-amber-100 text-amber-700",
+    };
+  }
+
+  const initials = member.name
+    .split(" ")
+    .map((part) => part[0]?.toUpperCase())
+    .slice(0, 2)
+    .join("");
+
+  return {
+    label: member.name,
+    initials,
+    tone: member.active
+      ? "bg-[#e9f0ff] text-[#2563eb]"
+      : "bg-slate-100 text-slate-600",
+  };
+}
 
 export default function ProjectBoardMobile({
   tasks,
-  memberNameMap,
+  memberMap,
   activeTaskId,
   onSelectTask,
   onCreateTask,
@@ -14,6 +51,7 @@ export default function ProjectBoardMobile({
   onDeleteTask,
 }: {
   tasks: Task[];
+  memberMap: Record<string, ProjectMember>;
   memberNameMap: Record<string, string>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
@@ -71,6 +109,7 @@ export default function ProjectBoardMobile({
             {group.items.length > 0 ? (
               group.items.map((task) => {
                 const selected = activeTaskId === task.id;
+                const assignee = assigneeVisual(task, memberMap);
 
                 return (
                   <div
@@ -92,12 +131,17 @@ export default function ProjectBoardMobile({
                       <p className="mt-2 line-clamp-2 text-[13px] leading-6 text-[#64748b]">
                         {task.description || "No description provided."}
                       </p>
-                      <p className="mt-3 text-[11px] font-bold text-[#64748b]">
-                        Assignee:{" "}
-                        {task.assigneeId
-                          ? memberNameMap[task.assigneeId] || "Unknown member"
-                          : "Unassigned"}
-                      </p>
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <div
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-extrabold ${assignee.tone}`}
+                        >
+                          {assignee.initials}
+                        </div>
+                        <p className="text-[11px] font-bold text-[#64748b]">
+                          {assignee.label}
+                        </p>
+                      </div>
                     </button>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">

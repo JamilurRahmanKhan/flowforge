@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { createTask } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
@@ -23,6 +23,11 @@ export default function CreateTaskModal({
   onCreated,
   onError,
 }: Props) {
+  const activeMembers = useMemo(
+    () => members.filter((member) => member.active),
+    [members]
+  );
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
@@ -54,6 +59,14 @@ export default function CreateTaskModal({
   async function handleSubmit() {
     if (!title.trim()) {
       setError("Task title is required");
+      return;
+    }
+
+    if (
+      assigneeId &&
+      !activeMembers.some((member) => member.userId === assigneeId)
+    ) {
+      setError("Please choose a valid active project member as assignee");
       return;
     }
 
@@ -181,14 +194,20 @@ export default function CreateTaskModal({
                   className="w-full rounded-[16px] border border-[#dbe4ef] bg-white px-4 py-3 text-sm outline-none focus:border-[#2563eb]"
                 >
                   <option value="">Unassigned</option>
-                  {members.map((member) => (
+                  {activeMembers.map((member) => (
                     <option key={member.userId} value={member.userId}>
-                      {member.name}
+                      {member.name} ({member.role})
                     </option>
                   ))}
                 </select>
               </div>
             </div>
+
+            {activeMembers.length === 0 ? (
+              <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                No active members are assigned to this project yet. This task will be created as unassigned.
+              </div>
+            ) : null}
 
             {error ? (
               <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">

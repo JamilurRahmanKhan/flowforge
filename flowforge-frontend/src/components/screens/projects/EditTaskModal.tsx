@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { updateTask } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
@@ -21,6 +21,11 @@ export default function EditTaskModal({
   onClose,
   onUpdated,
 }: Props) {
+  const activeMembers = useMemo(
+    () => members.filter((member) => member.active),
+    [members]
+  );
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
@@ -31,7 +36,6 @@ export default function EditTaskModal({
 
   useEffect(() => {
     if (!task) return;
-
     setTitle(task.title || "");
     setDescription(task.description || "");
     setPriority(task.priority || "MEDIUM");
@@ -56,6 +60,14 @@ export default function EditTaskModal({
 
     if (!title.trim()) {
       setError("Task title is required");
+      return;
+    }
+
+    if (
+      assigneeId &&
+      !activeMembers.some((member) => member.userId === assigneeId)
+    ) {
+      setError("Please choose a valid active project member as assignee");
       return;
     }
 
@@ -173,9 +185,9 @@ export default function EditTaskModal({
                   className="w-full rounded-[16px] border border-[#dbe4ef] bg-white px-4 py-3 text-sm outline-none focus:border-[#2563eb]"
                 >
                   <option value="">Unassigned</option>
-                  {members.map((member) => (
+                  {activeMembers.map((member) => (
                     <option key={member.userId} value={member.userId}>
-                      {member.name}
+                      {member.name} ({member.role})
                     </option>
                   ))}
                 </select>

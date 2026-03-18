@@ -80,6 +80,10 @@ export default function MyTasksScreen() {
     }
   }
 
+  const todoCount = tasks.filter((task) => task.status === "TODO").length;
+  const inProgressCount = tasks.filter((task) => task.status === "IN_PROGRESS").length;
+  const doneCount = tasks.filter((task) => task.status === "DONE").length;
+
   return (
     <div className="space-y-6">
       <section className="rounded-[32px] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
@@ -113,6 +117,27 @@ export default function MyTasksScreen() {
                 {value === "IN_PROGRESS" ? "IN PROGRESS" : value}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-[20px] border border-[#e6ebf3] bg-[#f8fafc] px-5 py-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#94a3b8]">
+              To Do
+            </p>
+            <p className="mt-2 text-[24px] font-extrabold text-[#0f172a]">{todoCount}</p>
+          </div>
+          <div className="rounded-[20px] border border-[#e6ebf3] bg-[#f8fafc] px-5 py-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#94a3b8]">
+              In Progress
+            </p>
+            <p className="mt-2 text-[24px] font-extrabold text-[#0f172a]">{inProgressCount}</p>
+          </div>
+          <div className="rounded-[20px] border border-[#e6ebf3] bg-[#f8fafc] px-5 py-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#94a3b8]">
+              Done
+            </p>
+            <p className="mt-2 text-[24px] font-extrabold text-[#0f172a]">{doneCount}</p>
           </div>
         </div>
       </section>

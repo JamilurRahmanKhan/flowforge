@@ -84,19 +84,27 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const memberNameMap = useMemo(() => {
-    const map: Record<string, string> = {};
-
-    for (const member of assignedMembers) {
-      map[member.userId] = member.name;
-    }
+  const memberMap = useMemo(() => {
+    const map: Record<string, ProjectMember> = {};
 
     for (const member of availableMembers) {
-      map[member.userId] = member.name;
+      map[member.userId] = member;
+    }
+
+    for (const member of assignedMembers) {
+      map[member.userId] = member;
     }
 
     return map;
   }, [assignedMembers, availableMembers]);
+
+  const memberNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    Object.values(memberMap).forEach((member) => {
+      map[member.userId] = member.name;
+    });
+    return map;
+  }, [memberMap]);
 
   function pushToast(toast: Omit<ProjectToast, "id">) {
     const nextId = toastIdRef.current++;
@@ -361,6 +369,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <ProjectOverviewDesktop
         project={project}
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}
@@ -374,6 +383,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <ProjectOverviewMobile
         project={project}
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}
@@ -388,6 +398,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     content = isDesktop ? (
       <ProjectBoardDesktop
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}
@@ -399,6 +410,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     ) : (
       <ProjectBoardMobile
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}
@@ -412,6 +424,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     content = isDesktop ? (
       <ProjectListTabDesktop
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}
@@ -423,6 +436,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     ) : (
       <ProjectListTabMobile
         tasks={tasks}
+        memberMap={memberMap}
         memberNameMap={memberNameMap}
         activeTaskId={activeTaskId}
         onSelectTask={setActiveTaskId}

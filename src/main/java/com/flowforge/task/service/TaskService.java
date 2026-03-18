@@ -139,18 +139,18 @@ public class TaskService {
     }
 
     private TaskResponse toResponse(Task task) {
-        return TaskResponse.builder()
-                .id(task.getId())
-                .tenantId(task.getTenantId())
-                .projectId(task.getProjectId())
-                .title(task.getTitle())
-                .description(task.getDescription())
-                .status(task.getStatus())
-                .priority(task.getPriority())
-                .dueDate(task.getDueDate())
-                .createdBy(task.getCreatedBy())
-                .createdAt(task.getCreatedAt())
-                .assigneeId(task.getAssigneeId())
-                .build();
+        return new TaskResponse(
+                task.getId(),
+                task.getTenantId(),
+                task.getProjectId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus(),
+                task.getPriority(),
+                task.getDueDate(),
+                task.getCreatedBy(),
+                task.getCreatedAt(),
+                task.getAssigneeId()
+        );
     }
 }
