@@ -1,74 +1,81 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  LayoutGrid,
+  Activity,
   FolderKanban,
-  CheckCircle2,
-  Users,
-  Bell,
-  Settings,
-  UserRound,
+  LayoutGrid,
+  ListChecks,
   LogOut,
-  Zap,
+  Settings,
+  Users,
+  UserCircle,
+  X,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/my-tasks", label: "My Tasks", icon: CheckCircle2 },
+  { href: "/my-tasks", label: "My Tasks", icon: ListChecks },
   { href: "/members", label: "Members", icon: Users },
-  { href: "/activity", label: "Activity", icon: Bell },
+  { href: "/activity", label: "Activity", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/profile", label: "Profile", icon: UserCircle },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
+type Props = {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+};
 
-  function isActive(href: string) {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname === href || pathname.startsWith(`${href}/`);
-  }
-
+function SidebarContent({
+  pathname,
+  onClose,
+}: {
+  pathname: string;
+  onClose?: () => void;
+}) {
   function handleLogout() {
     clearToken();
-    router.replace("/login");
+    window.location.href = "/login";
   }
 
   return (
-    <aside className="hidden h-screen w-[280px] shrink-0 border-r border-slate-200 bg-white px-5 py-6 lg:flex lg:flex-col">
-      <div className="flex items-center gap-3 px-2">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f66f6] text-white shadow-[0_10px_24px_rgba(47,102,246,0.28)]">
-          <Zap className="h-5 w-5" />
+    <div className="flex h-full flex-col bg-white px-5 py-5">
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <div className="text-[20px] font-extrabold text-slate-950">FlowForge</div>
+          <div className="text-sm text-slate-500">Enterprise</div>
         </div>
 
-        <div>
-          <div className="text-[18px] font-extrabold tracking-tight text-slate-900">
-            FlowForge
-          </div>
-          <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">
-            Enterprise
-          </div>
-        </div>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        ) : null}
       </div>
 
-      <nav className="mt-10 space-y-2">
+      <nav className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-bold transition ${
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                 active
-                  ? "bg-[#eef4ff] text-[#2f66f6]"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-[#eef4ff] text-[#2563eb]"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -78,30 +85,42 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto space-y-4">
-        <div className="rounded-[28px] bg-[#071a4b] p-6 text-white shadow-[0_10px_30px_rgba(7,26,75,0.18)]">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/70">
-            Pro Plan
-          </p>
-          <p className="mt-4 text-[17px] font-extrabold leading-8">
-            Unlock advanced
-            <br />
-            team collaboration
-          </p>
-          <button className="mt-5 rounded-full bg-white px-5 py-3 text-[14px] font-extrabold text-slate-900">
-            Upgrade
-          </button>
-        </div>
-
+      <div className="mt-auto pt-6">
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-[15px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
         >
           <LogOut className="h-4 w-4" />
           Logout
         </button>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export default function Sidebar({ mobileOpen = false, onClose }: Props) {
+  const pathname = usePathname();
+
+  return (
+    <>
+      <aside className="hidden h-screen w-[290px] flex-col border-r border-slate-200 bg-white md:flex">
+        <SidebarContent pathname={pathname} />
+      </aside>
+
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/35"
+          />
+          <aside className="absolute left-0 top-0 h-full w-[84%] max-w-[320px] shadow-[0_24px_60px_rgba(15,23,42,0.22)]">
+            <SidebarContent pathname={pathname} onClose={onClose} />
+          </aside>
+        </div>
+      ) : null}
+    </>
   );
 }
