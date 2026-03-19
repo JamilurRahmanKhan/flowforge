@@ -3,26 +3,17 @@ export type Project = {
   tenantId: string;
   name: string;
   key: string;
-  description: string | null;
+  description?: string | null;
   status: string;
-  visibility: string;
-  defaultWorkflow: string;
+  visibility?: string | null;
+  defaultWorkflow?: string | null;
   createdBy: string;
   createdAt: string;
-};
-
-export type CreateProjectPayload = {
-  name: string;
-  key: string;
-  description?: string;
-  visibility: string;
-  defaultWorkflow: string;
-};
-
-export type UpdateProjectPayload = {
-  name: string;
-  description?: string;
-  status?: string;
-  visibility?: string;
-  defaultWorkflow?: string;
+  updatedAt?: string | null;
+  memberCount?: number;
+  openTaskCount?: number;
+  progress?: number;
+  canManageProject?: boolean;
+  canCreateTask?: boolean;
+  canManageProjectMembers?: boolean;
 };

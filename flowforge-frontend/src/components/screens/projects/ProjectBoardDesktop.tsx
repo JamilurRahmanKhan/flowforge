@@ -1,12 +1,15 @@
 "use client";
 
 import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
+import type { Project } from "@/features/projects/types";
 import type { Task } from "@/features/tasks/types";
 import type { ProjectMember } from "@/features/project-members/types";
 
 type Props = {
+  project: Project;
   tasks: Task[];
   memberMap?: Record<string, ProjectMember>;
+  memberNameMap?: Record<string, string>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
   onCreateTask: () => void;
@@ -74,6 +77,7 @@ function assigneeVisual(
 }
 
 function BoardColumn({
+  project,
   title,
   tasks,
   memberMap = {},
@@ -83,6 +87,7 @@ function BoardColumn({
   onEditTask,
   onDeleteTask,
 }: {
+  project: Project;
   title: string;
   tasks: Task[];
   memberMap?: Record<string, ProjectMember>;
@@ -92,6 +97,8 @@ function BoardColumn({
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
 }) {
+  const canManageProject = !!project?.canManageProject;
+
   return (
     <div className="min-w-[280px] rounded-[26px] border border-[#e6ebf3] bg-[#f8fafc] p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -162,21 +169,25 @@ function BoardColumn({
                     {actionLabel(task.status)}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => onEditTask(task)}
-                    className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
-                  >
-                    Edit
-                  </button>
+                  {canManageProject ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onEditTask(task)}
+                        className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                      >
+                        Edit
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => onDeleteTask(task)}
-                    className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
-                  >
-                    Delete
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTask(task)}
+                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             );
@@ -192,6 +203,7 @@ function BoardColumn({
 }
 
 export default function ProjectBoardDesktop({
+  project,
   tasks,
   memberMap = {},
   activeTaskId,
@@ -202,6 +214,7 @@ export default function ProjectBoardDesktop({
   onDeleteTask,
 }: Props) {
   const grouped = columns(tasks);
+  const canCreateTask = !!project?.canCreateTask;
 
   return (
     <div className="space-y-6">
@@ -215,19 +228,22 @@ export default function ProjectBoardDesktop({
           </h2>
         </div>
 
-        <button
-          type="button"
-          onClick={onCreateTask}
-          className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
-        >
-          + Add Task
-        </button>
+        {canCreateTask ? (
+          <button
+            type="button"
+            onClick={onCreateTask}
+            className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
+          >
+            + Add Task
+          </button>
+        ) : null}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="overflow-x-auto">
           <div className="flex min-w-[920px] gap-5">
             <BoardColumn
+              project={project}
               title="To Do"
               tasks={grouped.TODO}
               memberMap={memberMap}
@@ -239,6 +255,7 @@ export default function ProjectBoardDesktop({
             />
 
             <BoardColumn
+              project={project}
               title="In Progress"
               tasks={grouped.IN_PROGRESS}
               memberMap={memberMap}
@@ -250,6 +267,7 @@ export default function ProjectBoardDesktop({
             />
 
             <BoardColumn
+              project={project}
               title="Done"
               tasks={grouped.DONE}
               memberMap={memberMap}

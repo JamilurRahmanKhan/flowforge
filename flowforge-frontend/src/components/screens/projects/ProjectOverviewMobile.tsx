@@ -76,6 +76,9 @@ export default function ProjectOverviewMobile({
   const done = tasks.filter((task) => task.status === "DONE").length;
   const unassigned = tasks.filter((task) => !task.assigneeId).length;
 
+  const canManageProject = !!project.canManageProject;
+  const canCreateTask = !!project.canCreateTask;
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -88,22 +91,26 @@ export default function ProjectOverviewMobile({
           </h2>
         </div>
 
-        <button
-          type="button"
-          onClick={onCreateTask}
-          className="rounded-full bg-[#2563eb] px-4 py-2 text-[12px] font-extrabold text-white"
-        >
-          + Add Task
-        </button>
+        {canCreateTask ? (
+          <button
+            type="button"
+            onClick={onCreateTask}
+            className="rounded-full bg-[#2563eb] px-4 py-2 text-[12px] font-extrabold text-white"
+          >
+            + Add Task
+          </button>
+        ) : null}
       </div>
 
-      <button
-        type="button"
-        onClick={onEdit}
-        className="w-full rounded-[18px] border border-[#dbe4f0] px-4 py-3 text-[13px] font-extrabold text-[#334155]"
-      >
-        Edit Project
-      </button>
+      {canManageProject ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="w-full rounded-[18px] border border-[#dbe4f0] px-4 py-3 text-[13px] font-extrabold text-[#334155]"
+        >
+          Edit Project
+        </button>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-[22px] border border-[#e6ebf3] bg-white p-4">
@@ -179,27 +186,35 @@ export default function ProjectOverviewMobile({
                   </button>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onStatusChanged(task)}
-                      className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
-                    >
-                      {actionLabel(task.status)}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onEditTask(task)}
-                      className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteTask(task)}
-                      className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
-                    >
-                      Delete
-                    </button>
+                    {task.canChangeStatus ? (
+                      <button
+                        type="button"
+                        onClick={() => onStatusChanged(task)}
+                        className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
+                      >
+                        {actionLabel(task.status)}
+                      </button>
+                    ) : null}
+
+                    {task.canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => onEditTask(task)}
+                        className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+
+                    {task.canDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTask(task)}
+                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                      >
+                        Delete
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               );

@@ -46,6 +46,26 @@ function nextStatus(status: string) {
   return "TODO";
 }
 
+function humanizeTaskStatusError(message: string, task: Task) {
+  const normalized = (message || "").toLowerCase();
+
+  if (
+    normalized.includes("permission") ||
+    normalized.includes("forbidden") ||
+    normalized.includes("not allowed") ||
+    normalized.includes("cannot change") ||
+    normalized.includes("not authorized")
+  ) {
+    return `You cannot change the status of "${task.title}" because it is assigned to another member or you do not have permission.`;
+  }
+
+  if (normalized === "request failed") {
+    return `You could not update "${task.title}". Please try again or check your access rights.`;
+  }
+
+  return message || `You could not update "${task.title}".`;
+}
+
 export default function ProjectDetailsScreen({ id }: { id: string }) {
   const router = useRouter();
   const toastIdRef = useRef(1);
@@ -61,8 +81,6 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(false);
   const [activityLoading, setActivityLoading] = useState(false);
-  const [membersLoaded, setMembersLoaded] = useState(false);
-  const [membersAttempted, setMembersAttempted] = useState(false);
 
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -152,41 +170,29 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     }
   }
 
-  async function refreshProjectTasks() {
-    if (!project) return;
-    await loadTasksOnly(project.id);
-  }
-
-  async function refreshProjectData() {
-    if (!project) return;
-    await Promise.all([
-      loadTasksOnly(project.id),
-      loadProjectActivityOnly(project.id),
-    ]);
-  }
-
   async function loadMembersOnly() {
     if (!project) return;
 
     try {
       setMembersLoading(true);
-      setMembersAttempted(true);
 
       const [assigned, available] = await Promise.all([
-        getAssignedProjectMembers(project.id),
-        getAvailableProjectMembers(project.id),
+        getAssignedProjectMembers(project.id).catch(
+          () => [] as ProjectMember[]
+        ),
+        getAvailableProjectMembers(project.id).catch(
+          () => [] as ProjectMember[]
+        ),
       ]);
 
       setAssignedMembers(assigned);
       setAvailableMembers(available);
-      setMembersLoaded(true);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load members";
 
       setAssignedMembers([]);
       setAvailableMembers([]);
-      setMembersLoaded(false);
 
       pushToast({
         type: "error",
@@ -196,6 +202,11 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
     } finally {
       setMembersLoading(false);
     }
+  }
+
+  async function refreshProjectTasks() {
+    if (!project) return;
+    await loadTasksOnly(project.id);
   }
 
   async function loadProjectDetails() {
@@ -228,7 +239,6 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         setAssignedMembers(assigned);
         setAvailableMembers(available);
         setProjectActivity(activityData);
-        setMembersLoaded(true);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to load project data";
@@ -268,19 +278,15 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
 
   useEffect(() => {
     loadProjectDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
-    if (
-      activeTab === "members" &&
-      project &&
-      !membersLoaded &&
-      !membersLoading &&
-      !membersAttempted
-    ) {
+    if (activeTab === "members" && project) {
       loadMembersOnly();
     }
-  }, [activeTab, project, membersLoaded, membersLoading, membersAttempted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, project?.id]);
 
   async function handleArchiveConfirm() {
     if (!project) return;
@@ -380,13 +386,13 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         description: `${updated.title} moved to ${updated.status}.`,
       });
     } catch (err) {
-      const message =
+      const rawMessage =
         err instanceof Error ? err.message : "Failed to update task status";
 
       pushToast({
         type: "error",
-        title: "Status update failed",
-        description: message,
+        title: "You cannot update this task",
+        description: humanizeTaskStatusError(rawMessage, task),
       });
     }
   }
@@ -442,6 +448,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   } else if (activeTab === "board") {
     content = isDesktop ? (
       <ProjectBoardDesktop
+        project={project}
         tasks={tasks}
         memberMap={memberMap}
         memberNameMap={memberNameMap}
@@ -454,6 +461,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       />
     ) : (
       <ProjectBoardMobile
+        project={project}
         tasks={tasks}
         memberMap={memberMap}
         memberNameMap={memberNameMap}
@@ -468,6 +476,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
   } else if (activeTab === "list") {
     content = isDesktop ? (
       <ProjectListTabDesktop
+        project={project}
         tasks={tasks}
         memberMap={memberMap}
         memberNameMap={memberNameMap}
@@ -480,6 +489,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       />
     ) : (
       <ProjectListTabMobile
+        project={project}
         tasks={tasks}
         memberMap={memberMap}
         memberNameMap={memberNameMap}
@@ -536,14 +546,9 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
       <ProjectDetailsShell
         project={project}
         activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          if (tab !== "members") {
-            setMembersAttempted(false);
-          }
-        }}
+        onTabChange={setActiveTab}
         onArchive={() => {
-          if (project.status === "ARCHIVED") {
+          if ((project.status || "").toUpperCase() === "ARCHIVED") {
             handleUnarchive();
           } else {
             setOpenArchive(true);

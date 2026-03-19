@@ -114,6 +114,9 @@ export default function ProjectOverviewDesktop({
   const recentTasks = [...tasks].slice(0, 5);
   const unassignedCount = tasks.filter((task) => !task.assigneeId).length;
 
+  const canManageProject = !!project.canManageProject;
+  const canCreateTask = !!project.canCreateTask;
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
@@ -127,20 +130,25 @@ export default function ProjectOverviewDesktop({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-full border border-[#dbe4f0] px-4 py-2.5 text-[13px] font-extrabold text-[#334155]"
-          >
-            Edit Project
-          </button>
-          <button
-            type="button"
-            onClick={onCreateTask}
-            className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
-          >
-            + Add Task
-          </button>
+          {canManageProject ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-full border border-[#dbe4f0] px-4 py-2.5 text-[13px] font-extrabold text-[#334155]"
+            >
+              Edit Project
+            </button>
+          ) : null}
+
+          {canCreateTask ? (
+            <button
+              type="button"
+              onClick={onCreateTask}
+              className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
+            >
+              + Add Task
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -209,27 +217,35 @@ export default function ProjectOverviewDesktop({
                     </div>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onStatusChanged(task)}
-                        className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
-                      >
-                        {actionLabel(task.status)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEditTask(task)}
-                        className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteTask(task)}
-                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
-                      >
-                        Delete
-                      </button>
+                      {task.canChangeStatus ? (
+                        <button
+                          type="button"
+                          onClick={() => onStatusChanged(task)}
+                          className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
+                        >
+                          {actionLabel(task.status)}
+                        </button>
+                      ) : null}
+
+                      {task.canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => onEditTask(task)}
+                          className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                        >
+                          Edit
+                        </button>
+                      ) : null}
+
+                      {task.canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteTask(task)}
+                          className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                        >
+                          Delete
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 );

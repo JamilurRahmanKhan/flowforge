@@ -15,7 +15,7 @@ import java.util.UUID;
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_users_tenant_email", columnNames = {"tenant_id", "email"})
+                @UniqueConstraint(name = "uk_users_email", columnNames = {"email"})
         }
 )
 public class User {
@@ -24,21 +24,14 @@ public class User {
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "tenant_id", nullable = false)
-    private UUID tenantId;
-
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
 
     @Column(nullable = false)
     private boolean active;

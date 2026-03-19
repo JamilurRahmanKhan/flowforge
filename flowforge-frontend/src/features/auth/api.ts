@@ -14,6 +14,10 @@ export type RegisterPayload = {
   password: string;
 };
 
+export type SwitchWorkspacePayload = {
+  workspaceSlug: string;
+};
+
 export type AuthResponse = {
   token: string;
   userId: string;
@@ -23,6 +27,8 @@ export type AuthResponse = {
   organizationId?: string;
   organizationName?: string;
   organizationSlug?: string;
+  workspaceSlug?: string;
+  workspaceName?: string;
   message?: string;
 };
 
@@ -42,6 +48,17 @@ type RawRegisterResponse = {
   ownerId?: string;
   ownerEmail?: string;
   message?: string;
+};
+
+type RawSwitchWorkspaceResponse = {
+  accessToken: string;
+  tokenType: string;
+  userId: string;
+  tenantId: string;
+  email: string;
+  role: string;
+  workspaceSlug: string;
+  workspaceName: string;
 };
 
 async function parseJson(response: Response) {
@@ -112,6 +129,43 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
     organizationName: data.organizationName,
     organizationSlug: data.organizationSlug,
     message: data.message || "Workspace created successfully",
+  };
+}
+
+export async function switchWorkspace(
+  payload: SwitchWorkspacePayload,
+  token: string
+): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/switch-workspace`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await parseJson(response)) as RawSwitchWorkspaceResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        data?.error ||
+        `Request failed with status ${response.status}`
+    );
+  }
+
+  return {
+    token: data.accessToken,
+    userId: data.userId,
+    tenantId: data.tenantId,
+    email: data.email,
+    role: data.role,
+    workspaceSlug: data.workspaceSlug,
+    workspaceName: data.workspaceName,
   };
 }
 

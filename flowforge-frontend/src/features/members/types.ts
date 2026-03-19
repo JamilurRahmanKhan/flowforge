@@ -9,3 +9,8 @@ export type WorkspaceMember = {
   assignedProjectsCount: number;
   assignedTasksCount: number;
 };
+
+export type AddWorkspaceMemberRequest = {
+  email: string;
+  role: string;
+};

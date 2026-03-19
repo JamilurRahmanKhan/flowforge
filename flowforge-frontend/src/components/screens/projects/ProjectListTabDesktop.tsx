@@ -1,6 +1,7 @@
 "use client";
 
 import TaskCommentsPanel from "@/components/screens/tasks/TaskCommentsPanel";
+import type { Project } from "@/features/projects/types";
 import type { Task } from "@/features/tasks/types";
 import type { ProjectMember } from "@/features/project-members/types";
 
@@ -49,6 +50,7 @@ function assigneeVisual(
 }
 
 export default function ProjectListTabDesktop({
+  project,
   tasks,
   memberMap = {},
   activeTaskId,
@@ -58,8 +60,10 @@ export default function ProjectListTabDesktop({
   onEditTask,
   onDeleteTask,
 }: {
+  project: Project;
   tasks: Task[];
   memberMap?: Record<string, ProjectMember>;
+  memberNameMap?: Record<string, string>;
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
   onCreateTask: () => void;
@@ -73,6 +77,9 @@ export default function ProjectListTabDesktop({
     return bTime - aTime;
   });
 
+  const canCreateTask = !!project?.canCreateTask;
+  const canManageProject = !!project?.canManageProject;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -85,13 +92,15 @@ export default function ProjectListTabDesktop({
           </h2>
         </div>
 
-        <button
-          type="button"
-          onClick={onCreateTask}
-          className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
-        >
-          + Add Task
-        </button>
+        {canCreateTask ? (
+          <button
+            type="button"
+            onClick={onCreateTask}
+            className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
+          >
+            + Add Task
+          </button>
+        ) : null}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -171,20 +180,25 @@ export default function ProjectListTabDesktop({
                         >
                           {actionLabel(task.status)}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => onEditTask(task)}
-                          className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteTask(task)}
-                          className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
-                        >
-                          Delete
-                        </button>
+
+                        {canManageProject ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onEditTask(task)}
+                              className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteTask(task)}
+                              className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   );

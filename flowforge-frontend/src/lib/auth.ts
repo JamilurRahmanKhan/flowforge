@@ -6,6 +6,10 @@ export function saveToken(token: string) {
   }
 }
 
+export function setToken(token: string) {
+  saveToken(token);
+}
+
 export function getToken() {
   if (typeof window !== "undefined") {
     return localStorage.getItem(TOKEN_KEY);

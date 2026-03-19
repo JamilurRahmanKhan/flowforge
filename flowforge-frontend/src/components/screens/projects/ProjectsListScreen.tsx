@@ -41,25 +41,22 @@ function initials(value: string) {
 }
 
 function getProjectStatusTone(status?: string) {
-  if (status === "ARCHIVED") {
+  if ((status || "").toUpperCase() === "ARCHIVED") {
     return "bg-slate-100 text-slate-600";
   }
   return "bg-emerald-100 text-emerald-700";
 }
 
-function estimateProgress(project: Project) {
-  if (typeof project.progress === "number") return project.progress;
-  return project.status === "ARCHIVED" ? 100 : 74;
+function getProjectProgress(project: Project) {
+  return typeof project.progress === "number" ? project.progress : 0;
 }
 
-function estimateOpenTasks(project: Project) {
-  if (typeof project.openTaskCount === "number") return project.openTaskCount;
-  return 0;
+function getProjectOpenTasks(project: Project) {
+  return typeof project.openTaskCount === "number" ? project.openTaskCount : 0;
 }
 
-function estimateMembers(project: Project) {
-  if (typeof project.memberCount === "number") return project.memberCount;
-  return 1;
+function getProjectMembers(project: Project) {
+  return typeof project.memberCount === "number" ? project.memberCount : 0;
 }
 
 export default function ProjectsListScreen() {
@@ -117,8 +114,18 @@ export default function ProjectsListScreen() {
         return a.name.localeCompare(b.name);
       }
 
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const aTime = a.updatedAt
+        ? new Date(a.updatedAt).getTime()
+        : a.createdAt
+        ? new Date(a.createdAt).getTime()
+        : 0;
+
+      const bTime = b.updatedAt
+        ? new Date(b.updatedAt).getTime()
+        : b.createdAt
+        ? new Date(b.createdAt).getTime()
+        : 0;
+
       return bTime - aTime;
     });
 
@@ -274,14 +281,16 @@ export default function ProjectsListScreen() {
                 </select>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setOpenCreate(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-[#2563eb] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.22)] transition hover:translate-y-[-1px]"
-              >
-                <Plus className="h-4 w-4" />
-                New Project
-              </button>
+              {projects.some((project) => project.canManageProject) ? (
+                <button
+                  type="button"
+                  onClick={() => setOpenCreate(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#2563eb] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.22)] transition hover:translate-y-[-1px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -306,9 +315,9 @@ export default function ProjectsListScreen() {
           ) : (
             <div className="mt-6 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
               {filteredProjects.map((project) => {
-                const progress = estimateProgress(project);
-                const openTasks = estimateOpenTasks(project);
-                const members = estimateMembers(project);
+                const progress = getProjectProgress(project);
+                const openTasks = getProjectOpenTasks(project);
+                const members = getProjectMembers(project);
                 const status = (project.status || "ACTIVE").toUpperCase();
                 const busy = busyId === project.id;
 
@@ -395,7 +404,7 @@ export default function ProjectsListScreen() {
                       <div className="h-2.5 rounded-full bg-[#e9eef5]">
                         <div
                           className="h-2.5 rounded-full bg-[#2563eb] transition-all"
-                          style={{ width: `${Math.max(6, Math.min(progress, 100))}%` }}
+                          style={{ width: `${Math.max(0, Math.min(progress, 100))}%` }}
                         />
                       </div>
                     </div>
@@ -416,52 +425,54 @@ export default function ProjectsListScreen() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingProject(project);
-                          }}
-                          disabled={busy}
-                          className="rounded-full border border-[#dbe4f0] px-3 py-2 text-[12px] font-extrabold text-[#334155]"
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Pencil className="h-3.5 w-3.5" />
-                            Edit
-                          </span>
-                        </button>
+                      {project.canManageProject ? (
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingProject(project);
+                            }}
+                            disabled={busy}
+                            className="rounded-full border border-[#dbe4f0] px-3 py-2 text-[12px] font-extrabold text-[#334155]"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit
+                            </span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleArchiveToggle(project);
-                          }}
-                          disabled={busy}
-                          className="rounded-full border border-[#dbe4f0] px-3 py-2 text-[12px] font-extrabold text-[#334155]"
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Archive className="h-3.5 w-3.5" />
-                            {status === "ARCHIVED" ? "Restore" : "Archive"}
-                          </span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchiveToggle(project);
+                            }}
+                            disabled={busy}
+                            className="rounded-full border border-[#dbe4f0] px-3 py-2 text-[12px] font-extrabold text-[#334155]"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              <Archive className="h-3.5 w-3.5" />
+                              {status === "ARCHIVED" ? "Restore" : "Archive"}
+                            </span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(project.id);
-                          }}
-                          disabled={busy}
-                          className="rounded-full border border-rose-200 px-3 py-2 text-[12px] font-extrabold text-rose-600"
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(project.id);
+                            }}
+                            disabled={busy}
+                            className="rounded-full border border-rose-200 px-3 py-2 text-[12px] font-extrabold text-rose-600"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </span>
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </article>
                 );

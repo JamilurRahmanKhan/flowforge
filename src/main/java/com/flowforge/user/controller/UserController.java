@@ -1,8 +1,10 @@
 package com.flowforge.user.controller;
 
 import com.flowforge.security.CustomUserPrincipal;
+import com.flowforge.user.dto.AddWorkspaceMemberRequest;
 import com.flowforge.user.dto.ChangePasswordRequest;
 import com.flowforge.user.dto.CurrentUserResponse;
+import com.flowforge.user.dto.MyWorkspaceResponse;
 import com.flowforge.user.dto.UpdateProfileRequest;
 import com.flowforge.user.dto.WorkspaceUserResponse;
 import com.flowforge.user.service.UserService;
@@ -26,6 +28,21 @@ public class UserController {
     public List<WorkspaceUserResponse> getWorkspaceUsers(Authentication authentication) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return userService.getWorkspaceUsers(principal);
+    }
+
+    @PostMapping
+    public WorkspaceUserResponse addExistingUserToWorkspace(
+            @Valid @RequestBody AddWorkspaceMemberRequest request,
+            Authentication authentication
+    ) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return userService.addExistingUserToWorkspace(principal, request);
+    }
+
+    @GetMapping("/my-workspaces")
+    public List<MyWorkspaceResponse> getMyWorkspaces(Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return userService.getMyWorkspaces(principal);
     }
 
     @GetMapping("/me")

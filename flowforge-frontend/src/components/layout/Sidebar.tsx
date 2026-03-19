@@ -43,8 +43,8 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex h-full flex-col bg-white px-5 py-5">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="flex h-full flex-col bg-white">
+      <div className="flex items-start justify-between px-5 pb-6 pt-6">
         <div>
           <div className="text-[20px] font-extrabold text-slate-950">FlowForge</div>
           <div className="text-sm text-slate-500">Enterprise</div>
@@ -61,31 +61,33 @@ function SidebarContent({
         ) : null}
       </div>
 
-      <nav className="space-y-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+      <div className="flex-1 overflow-y-auto px-5 pb-5">
+        <nav className="space-y-1">
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                active
-                  ? "bg-[#eef4ff] text-[#2563eb]"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                  active
+                    ? "bg-[#eef4ff] text-[#2563eb]"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
 
-      <div className="mt-auto pt-6">
+      <div className="border-t border-slate-200 px-5 py-5">
         <button
           type="button"
           onClick={handleLogout}
@@ -104,7 +106,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: Props) {
 
   return (
     <>
-      <aside className="hidden h-screen w-[290px] flex-col border-r border-slate-200 bg-white md:flex">
+      <aside className="sticky top-0 hidden h-screen w-[290px] shrink-0 border-r border-slate-200 bg-white md:block">
         <SidebarContent pathname={pathname} />
       </aside>
 
@@ -116,7 +118,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: Props) {
             onClick={onClose}
             className="absolute inset-0 bg-slate-900/35"
           />
-          <aside className="absolute left-0 top-0 h-full w-[84%] max-w-[320px] shadow-[0_24px_60px_rgba(15,23,42,0.22)]">
+          <aside className="absolute left-0 top-0 h-full w-[84%] max-w-[320px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.22)]">
             <SidebarContent pathname={pathname} onClose={onClose} />
           </aside>
         </div>

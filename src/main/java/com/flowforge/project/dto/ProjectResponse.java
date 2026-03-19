@@ -15,10 +15,33 @@ public class ProjectResponse {
     private String defaultWorkflow;
     private UUID createdBy;
     private Instant createdAt;
+    private Instant updatedAt;
+    private long memberCount;
+    private long openTaskCount;
+    private int progress;
+    private boolean canManageProject;
+    private boolean canCreateTask;
+    private boolean canManageMembers;
 
-    public ProjectResponse(UUID id, UUID tenantId, String name, String key, String description,
-                           String status, String visibility, String defaultWorkflow,
-                           UUID createdBy, Instant createdAt) {
+    public ProjectResponse(
+            UUID id,
+            UUID tenantId,
+            String name,
+            String key,
+            String description,
+            String status,
+            String visibility,
+            String defaultWorkflow,
+            UUID createdBy,
+            Instant createdAt,
+            Instant updatedAt,
+            long memberCount,
+            long openTaskCount,
+            int progress,
+            boolean canManageProject,
+            boolean canCreateTask,
+            boolean canManageMembers
+    ) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
@@ -29,6 +52,13 @@ public class ProjectResponse {
         this.defaultWorkflow = defaultWorkflow;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.memberCount = memberCount;
+        this.openTaskCount = openTaskCount;
+        this.progress = progress;
+        this.canManageProject = canManageProject;
+        this.canCreateTask = canCreateTask;
+        this.canManageMembers = canManageMembers;
     }
 
     public UUID getId() {
@@ -69,5 +99,33 @@ public class ProjectResponse {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public long getMemberCount() {
+        return memberCount;
+    }
+
+    public long getOpenTaskCount() {
+        return openTaskCount;
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public boolean isCanManageProject() {
+        return canManageProject;
+    }
+
+    public boolean isCanCreateTask() {
+        return canCreateTask;
+    }
+
+    public boolean isCanManageMembers() {
+        return canManageMembers;
     }
 }

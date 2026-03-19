@@ -11,6 +11,7 @@ type Props = {
   projectId: string;
   assignedMembers: ProjectMember[];
   availableMembers: ProjectMember[];
+  canManage: boolean;
   onMembersChanged: () => Promise<void> | void;
 };
 
@@ -26,6 +27,7 @@ export default function ProjectMembersDesktop({
   projectId,
   assignedMembers,
   availableMembers,
+  canManage,
   onMembersChanged,
 }: Props) {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export default function ProjectMembersDesktop({
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className={`grid gap-6 ${canManage ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
         <section className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
           <div className="flex items-center justify-between">
             <h3 className="text-[22px] font-extrabold tracking-tight text-[#0f172a]">
@@ -101,14 +103,16 @@ export default function ProjectMembersDesktop({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(member.userId)}
-                    disabled={loadingUserId === member.userId}
-                    className="rounded-full border border-rose-200 px-4 py-2 text-[12px] font-extrabold text-rose-600 disabled:opacity-60"
-                  >
-                    {loadingUserId === member.userId ? "Removing..." : "Remove"}
-                  </button>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(member.userId)}
+                      disabled={loadingUserId === member.userId}
+                      className="rounded-full border border-rose-200 px-4 py-2 text-[12px] font-extrabold text-rose-600 disabled:opacity-60"
+                    >
+                      {loadingUserId === member.userId ? "Removing..." : "Remove"}
+                    </button>
+                  ) : null}
                 </div>
               ))
             ) : (
@@ -119,58 +123,60 @@ export default function ProjectMembersDesktop({
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[22px] font-extrabold tracking-tight text-[#0f172a]">
-              Available Members
-            </h3>
-            <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-[12px] font-extrabold text-[#475569]">
-              {availableMembers.length}
-            </span>
-          </div>
+        {canManage ? (
+          <section className="rounded-[28px] border border-[#e6ebf3] bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[22px] font-extrabold tracking-tight text-[#0f172a]">
+                Available Members
+              </h3>
+              <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-[12px] font-extrabold text-[#475569]">
+                {availableMembers.length}
+              </span>
+            </div>
 
-          <div className="mt-6 space-y-4">
-            {availableMembers.length > 0 ? (
-              availableMembers.map((member) => (
-                <div
-                  key={member.userId}
-                  className="flex items-center justify-between gap-4 rounded-[22px] border border-[#eef2f7] bg-[#f8fafc] px-5 py-4"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#e9f0ff] text-sm font-extrabold text-[#2563eb]">
-                      {initials(member.name)}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
-                        {member.name}
-                      </p>
-                      <p className="truncate text-[13px] text-[#64748b]">
-                        {member.email}
-                      </p>
-                      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">
-                        {member.role}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleAssign(member.userId)}
-                    disabled={loadingUserId === member.userId}
-                    className="rounded-full bg-[#2563eb] px-4 py-2 text-[12px] font-extrabold text-white disabled:opacity-60"
+            <div className="mt-6 space-y-4">
+              {availableMembers.length > 0 ? (
+                availableMembers.map((member) => (
+                  <div
+                    key={member.userId}
+                    className="flex items-center justify-between gap-4 rounded-[22px] border border-[#eef2f7] bg-[#f8fafc] px-5 py-4"
                   >
-                    {loadingUserId === member.userId ? "Assigning..." : "Assign"}
-                  </button>
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#e9f0ff] text-sm font-extrabold text-[#2563eb]">
+                        {initials(member.name)}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
+                          {member.name}
+                        </p>
+                        <p className="truncate text-[13px] text-[#64748b]">
+                          {member.email}
+                        </p>
+                        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">
+                          {member.role}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAssign(member.userId)}
+                      disabled={loadingUserId === member.userId}
+                      className="rounded-full bg-[#2563eb] px-4 py-2 text-[12px] font-extrabold text-white disabled:opacity-60"
+                    >
+                      {loadingUserId === member.userId ? "Assigning..." : "Assign"}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[20px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-5 py-10 text-center text-[14px] font-medium text-[#94a3b8]">
+                  No available members to assign.
                 </div>
-              ))
-            ) : (
-              <div className="rounded-[20px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-5 py-10 text-center text-[14px] font-medium text-[#94a3b8]">
-                No available members to assign.
-              </div>
-            )}
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   );

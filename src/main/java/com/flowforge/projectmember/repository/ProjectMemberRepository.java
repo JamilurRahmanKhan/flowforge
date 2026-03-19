@@ -11,17 +11,13 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UU
 
     List<ProjectMember> findByTenantIdAndProjectIdOrderByCreatedAtAsc(UUID tenantId, UUID projectId);
 
-    Optional<ProjectMember> findByTenantIdAndProjectIdAndUserId(
-            UUID tenantId,
-            UUID projectId,
-            UUID userId
-    );
+    List<ProjectMember> findByTenantIdAndUserIdOrderByCreatedAtAsc(UUID tenantId, UUID userId);
 
-    boolean existsByTenantIdAndProjectIdAndUserId(
-            UUID tenantId,
-            UUID projectId,
-            UUID userId
-    );
+    Optional<ProjectMember> findByTenantIdAndProjectIdAndUserId(UUID tenantId, UUID projectId, UUID userId);
+
+    boolean existsByTenantIdAndProjectIdAndUserId(UUID tenantId, UUID projectId, UUID userId);
 
     long countByTenantIdAndUserId(UUID tenantId, UUID userId);
+
+    long countByTenantIdAndProjectId(UUID tenantId, UUID projectId);
 }

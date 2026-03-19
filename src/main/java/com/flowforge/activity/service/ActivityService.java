@@ -15,7 +15,6 @@ import com.flowforge.user.entity.User;
 import com.flowforge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -60,7 +59,7 @@ public class ActivityService {
                     null,
                     null,
                     project.getCreatedBy(),
-                    resolveUserName(principal.getTenantId(), project.getCreatedBy())
+                    resolveUserName(project.getCreatedBy())
             ));
 
             List<Task> tasks = taskRepository.findByTenantIdAndProjectIdOrderByCreatedAtDesc(
@@ -79,7 +78,7 @@ public class ActivityService {
                         task.getId(),
                         task.getTitle(),
                         task.getCreatedBy(),
-                        resolveUserName(principal.getTenantId(), task.getCreatedBy())
+                        resolveUserName(task.getCreatedBy())
                 ));
 
                 List<Comment> comments = commentRepository.findByTenantIdAndTaskIdOrderByCreatedAtAsc(
@@ -98,7 +97,7 @@ public class ActivityService {
                             task.getId(),
                             task.getTitle(),
                             comment.getAuthorId(),
-                            resolveUserName(principal.getTenantId(), comment.getAuthorId())
+                            resolveUserName(comment.getAuthorId())
                     ));
                 }
             }
@@ -112,14 +111,14 @@ public class ActivityService {
                 activities.add(new ActivityResponse(
                         "MEMBER_ASSIGNED",
                         "Member assigned",
-                        resolveUserName(principal.getTenantId(), member.getUserId()) + " joined " + project.getName(),
+                        resolveUserName(member.getUserId()) + " joined " + project.getName(),
                         member.getCreatedAt(),
                         project.getId(),
                         project.getName(),
                         null,
                         null,
                         member.getUserId(),
-                        resolveUserName(principal.getTenantId(), member.getUserId())
+                        resolveUserName(member.getUserId())
                 ));
             }
         }
@@ -146,7 +145,7 @@ public class ActivityService {
                 null,
                 null,
                 project.getCreatedBy(),
-                resolveUserName(principal.getTenantId(), project.getCreatedBy())
+                resolveUserName(project.getCreatedBy())
         ));
 
         List<Task> tasks = taskRepository.findByTenantIdAndProjectIdOrderByCreatedAtDesc(
@@ -165,7 +164,7 @@ public class ActivityService {
                     task.getId(),
                     task.getTitle(),
                     task.getCreatedBy(),
-                    resolveUserName(principal.getTenantId(), task.getCreatedBy())
+                    resolveUserName(task.getCreatedBy())
             ));
 
             List<Comment> comments = commentRepository.findByTenantIdAndTaskIdOrderByCreatedAtAsc(
@@ -184,7 +183,7 @@ public class ActivityService {
                         task.getId(),
                         task.getTitle(),
                         comment.getAuthorId(),
-                        resolveUserName(principal.getTenantId(), comment.getAuthorId())
+                        resolveUserName(comment.getAuthorId())
                 ));
             }
         }
@@ -198,14 +197,14 @@ public class ActivityService {
             activities.add(new ActivityResponse(
                     "MEMBER_ASSIGNED",
                     "Member assigned",
-                    resolveUserName(principal.getTenantId(), member.getUserId()) + " joined this project",
+                    resolveUserName(member.getUserId()) + " joined this project",
                     member.getCreatedAt(),
                     project.getId(),
                     project.getName(),
                     null,
                     null,
                     member.getUserId(),
-                    resolveUserName(principal.getTenantId(), member.getUserId())
+                    resolveUserName(member.getUserId())
             ));
         }
 
@@ -215,12 +214,12 @@ public class ActivityService {
                 .toList();
     }
 
-    private String resolveUserName(UUID tenantId, UUID userId) {
+    private String resolveUserName(UUID userId) {
         if (userId == null) {
             return "Unknown user";
         }
 
-        return userRepository.findByIdAndTenantId(userId, tenantId)
+        return userRepository.findById(userId)
                 .map(User::getName)
                 .orElse("Unknown user");
     }

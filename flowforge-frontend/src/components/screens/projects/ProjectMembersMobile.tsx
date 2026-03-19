@@ -11,6 +11,7 @@ type Props = {
   projectId: string;
   assignedMembers: ProjectMember[];
   availableMembers: ProjectMember[];
+  canManage: boolean;
   onMembersChanged: () => Promise<void> | void;
 };
 
@@ -75,6 +76,7 @@ export default function ProjectMembersMobile({
   projectId,
   assignedMembers,
   availableMembers,
+  canManage,
   onMembersChanged,
 }: Props) {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
@@ -126,16 +128,39 @@ export default function ProjectMembersMobile({
 
         <div className="mt-4 space-y-3">
           {assignedMembers.length > 0 ? (
-            assignedMembers.map((member) => (
-              <MemberCard
-                key={member.userId}
-                member={member}
-                actionLabel="Remove"
-                actionType="remove"
-                loading={loadingUserId === member.userId}
-                onAction={() => handleRemove(member.userId)}
-              />
-            ))
+            assignedMembers.map((member) =>
+              canManage ? (
+                <MemberCard
+                  key={member.userId}
+                  member={member}
+                  actionLabel="Remove"
+                  actionType="remove"
+                  loading={loadingUserId === member.userId}
+                  onAction={() => handleRemove(member.userId)}
+                />
+              ) : (
+                <div
+                  key={member.userId}
+                  className="rounded-[20px] border border-[#eef2f7] bg-[#f8fafc] p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e9f0ff] text-sm font-extrabold text-[#2563eb]">
+                      {initials(member.name)}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
+                        {member.name}
+                      </p>
+                      <p className="truncate text-[13px] text-[#64748b]">{member.email}</p>
+                      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">
+                        {member.role}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            )
           ) : (
             <div className="rounded-[18px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-4 py-8 text-center text-[13px] font-medium text-[#94a3b8]">
               No assigned members yet.
@@ -144,35 +169,37 @@ export default function ProjectMembersMobile({
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-[#e6ebf3] bg-white p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[18px] font-extrabold text-[#0f172a]">
-            Available Members
-          </h3>
-          <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-extrabold text-[#475569]">
-            {availableMembers.length}
-          </span>
-        </div>
+      {canManage ? (
+        <section className="rounded-[24px] border border-[#e6ebf3] bg-white p-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[18px] font-extrabold text-[#0f172a]">
+              Available Members
+            </h3>
+            <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-extrabold text-[#475569]">
+              {availableMembers.length}
+            </span>
+          </div>
 
-        <div className="mt-4 space-y-3">
-          {availableMembers.length > 0 ? (
-            availableMembers.map((member) => (
-              <MemberCard
-                key={member.userId}
-                member={member}
-                actionLabel="Assign"
-                actionType="assign"
-                loading={loadingUserId === member.userId}
-                onAction={() => handleAssign(member.userId)}
-              />
-            ))
-          ) : (
-            <div className="rounded-[18px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-4 py-8 text-center text-[13px] font-medium text-[#94a3b8]">
-              No available members to assign.
-            </div>
-          )}
-        </div>
-      </section>
+          <div className="mt-4 space-y-3">
+            {availableMembers.length > 0 ? (
+              availableMembers.map((member) => (
+                <MemberCard
+                  key={member.userId}
+                  member={member}
+                  actionLabel="Assign"
+                  actionType="assign"
+                  loading={loadingUserId === member.userId}
+                  onAction={() => handleAssign(member.userId)}
+                />
+              ))
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-[#dbe4f0] bg-[#f8fafc] px-4 py-8 text-center text-[13px] font-medium text-[#94a3b8]">
+                No available members to assign.
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

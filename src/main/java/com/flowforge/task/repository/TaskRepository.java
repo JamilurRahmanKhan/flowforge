@@ -11,9 +11,13 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     List<Task> findByTenantIdAndProjectIdOrderByCreatedAtDesc(UUID tenantId, UUID projectId);
 
-    Optional<Task> findByIdAndTenantId(UUID id, UUID tenantId);
-
     List<Task> findByTenantIdAndAssigneeIdOrderByCreatedAtDesc(UUID tenantId, UUID assigneeId);
 
+    Optional<Task> findByIdAndTenantId(UUID id, UUID tenantId);
+
     long countByTenantIdAndAssigneeId(UUID tenantId, UUID assigneeId);
+
+    long countByTenantIdAndProjectId(UUID tenantId, UUID projectId);
+
+    long countByTenantIdAndProjectIdAndStatus(UUID tenantId, UUID projectId, String status);
 }

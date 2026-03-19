@@ -1,6 +1,5 @@
 package com.flowforge.security.jwt;
 
-import com.flowforge.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +10,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -29,16 +29,21 @@ public class JwtService {
         this.accessTokenMinutes = accessTokenMinutes;
     }
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(
+            UUID userId,
+            UUID tenantId,
+            String email,
+            String role
+    ) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(accessTokenMinutes * 60);
 
         return Jwts.builder()
                 .issuer(issuer)
-                .subject(user.getId().toString())
-                .claim("tenantId", user.getTenantId().toString())
-                .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
+                .subject(userId.toString())
+                .claim("tenantId", tenantId.toString())
+                .claim("email", email)
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(secretKey)

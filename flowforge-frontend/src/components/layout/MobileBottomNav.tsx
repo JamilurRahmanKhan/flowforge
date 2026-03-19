@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -14,8 +14,16 @@ import {
   UserCircle,
   LogOut,
   X,
+  Building2,
+  Check,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
+import {
+  getActiveWorkspaceSlug,
+  setActiveWorkspaceSlug,
+} from "@/lib/workspace-session";
+import { getMyWorkspaces } from "@/features/workspaces/api";
+import type { MyWorkspace } from "@/features/workspaces/types";
 
 type PrimaryNavItem = {
   href: string;
@@ -41,7 +49,13 @@ const primaryItems: PrimaryNavItem[] = [
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+
   const [openMore, setOpenMore] = useState(false);
+  const [openWorkspacePicker, setOpenWorkspacePicker] = useState(false);
+
+  const [workspaces, setWorkspaces] = useState<MyWorkspace[]>([]);
+  const [activeWorkspaceSlug, setActiveWorkspaceSlugState] = useState("");
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -51,8 +65,48 @@ export default function MobileBottomNav() {
   function handleLogout() {
     clearToken();
     setOpenMore(false);
+    setOpenWorkspacePicker(false);
     router.replace("/login");
   }
+
+  useEffect(() => {
+    async function loadWorkspaces() {
+      try {
+        setWorkspaceLoading(true);
+        const data = await getMyWorkspaces();
+        setWorkspaces(data);
+
+        const saved = getActiveWorkspaceSlug();
+        const fallback = data[0]?.workspaceSlug || "";
+        const current =
+          saved && data.some((item) => item.workspaceSlug === saved)
+            ? saved
+            : fallback;
+
+        setActiveWorkspaceSlugState(current);
+      } catch {
+        setWorkspaces([]);
+      } finally {
+        setWorkspaceLoading(false);
+      }
+    }
+
+    loadWorkspaces();
+  }, []);
+
+  function handleSelectWorkspace(workspace: MyWorkspace) {
+    setActiveWorkspaceSlug(workspace.workspaceSlug);
+    setActiveWorkspaceSlugState(workspace.workspaceSlug);
+    setOpenWorkspacePicker(false);
+    setOpenMore(false);
+    window.location.reload();
+  }
+
+  const activeWorkspace = useMemo(() => {
+    return (
+      workspaces.find((item) => item.workspaceSlug === activeWorkspaceSlug) || null
+    );
+  }, [workspaces, activeWorkspaceSlug]);
 
   const moreItems: MoreNavItem[] = useMemo(
     () => [
@@ -66,7 +120,7 @@ export default function MobileBottomNav() {
         action: handleLogout,
       },
     ],
-    [router]
+    []
   );
 
   const moreActive =
@@ -121,7 +175,7 @@ export default function MobileBottomNav() {
               >
                 <div
                   className={`flex h-11 w-11 items-center justify-center rounded-[16px] transition ${
-                    moreActive
+                    moreActive || openMore
                       ? "bg-[#edf4ff] text-[#2563eb]"
                       : "text-[#94a3b8]"
                   }`}
@@ -131,7 +185,7 @@ export default function MobileBottomNav() {
 
                 <span
                   className={`text-center text-[10px] font-extrabold leading-none tracking-[0.12em] ${
-                    moreActive ? "text-[#2563eb]" : "text-[#94a3b8]"
+                    moreActive || openMore ? "text-[#2563eb]" : "text-[#94a3b8]"
                   }`}
                 >
                   More
@@ -147,7 +201,10 @@ export default function MobileBottomNav() {
           <button
             type="button"
             aria-label="Close more menu"
-            onClick={() => setOpenMore(false)}
+            onClick={() => {
+              setOpenMore(false);
+              setOpenWorkspacePicker(false);
+            }}
             className="absolute inset-0 bg-slate-900/35 backdrop-blur-[2px]"
           />
 
@@ -166,12 +223,86 @@ export default function MobileBottomNav() {
 
               <button
                 type="button"
-                onClick={() => setOpenMore(false)}
+                onClick={() => {
+                  setOpenMore(false);
+                  setOpenWorkspacePicker(false);
+                }}
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dbe4ef] text-[#475569]"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setOpenWorkspacePicker((prev) => !prev)}
+              className="mb-4 w-full rounded-[24px] border border-[#dbe4ef] bg-[#f8fbff] p-4 text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#eaf1ff] text-[#2563eb]">
+                  <Building2 className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#94a3b8]">
+                    Switch Workspace
+                  </p>
+                  <p className="mt-1 truncate text-[15px] font-extrabold text-[#0f172a]">
+                    {activeWorkspace?.workspaceName || "Choose workspace"}
+                  </p>
+                  <p className="mt-1 truncate text-[12px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+                    {activeWorkspace?.workspaceSlug || "No workspace selected"}
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {openWorkspacePicker ? (
+              <div className="mb-4 max-h-[240px] overflow-y-auto rounded-[24px] border border-[#e6ebf3] bg-white p-2">
+                {workspaceLoading ? (
+                  <div className="px-4 py-5 text-sm font-semibold text-[#64748b]">
+                    Loading workspaces...
+                  </div>
+                ) : workspaces.length === 0 ? (
+                  <div className="px-4 py-5 text-sm font-semibold text-[#64748b]">
+                    No workspaces found.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {workspaces.map((workspace) => {
+                      const selected =
+                        workspace.workspaceSlug === activeWorkspaceSlug;
+
+                      return (
+                        <button
+                          key={workspace.workspaceSlug}
+                          type="button"
+                          onClick={() => handleSelectWorkspace(workspace)}
+                          className={`flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left transition ${
+                            selected
+                              ? "bg-[#eef4ff] text-[#2563eb]"
+                              : "bg-white text-[#0f172a] hover:bg-[#f8fafc]"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-[14px] font-extrabold">
+                              {workspace.workspaceName}
+                            </p>
+                            <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+                              {workspace.role} • {workspace.workspaceSlug}
+                            </p>
+                          </div>
+
+                          {selected ? (
+                            <Check className="h-4 w-4 shrink-0" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-3 pb-[max(env(safe-area-inset-bottom),20px)]">
               {moreItems.map((item) => {
@@ -183,7 +314,10 @@ export default function MobileBottomNav() {
                     <Link
                       key={item.label}
                       href={item.href}
-                      onClick={() => setOpenMore(false)}
+                      onClick={() => {
+                        setOpenMore(false);
+                        setOpenWorkspacePicker(false);
+                      }}
                       className={`rounded-[24px] border p-4 transition ${
                         active
                           ? "border-[#bfd3ff] bg-[#f5f9ff]"
