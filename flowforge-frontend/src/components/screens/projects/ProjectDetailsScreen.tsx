@@ -511,6 +511,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         projectId={project.id}
         assignedMembers={assignedMembers}
         availableMembers={availableMembers}
+        canManage={!!project.canManageMembers}
         onMembersChanged={async () => {
           await loadMembersOnly();
           await loadProjectActivityOnly(project.id);
@@ -521,6 +522,7 @@ export default function ProjectDetailsScreen({ id }: { id: string }) {
         projectId={project.id}
         assignedMembers={assignedMembers}
         availableMembers={availableMembers}
+        canManage={!!project.canManageMembers}
         onMembersChanged={async () => {
           await loadMembersOnly();
           await loadProjectActivityOnly(project.id);

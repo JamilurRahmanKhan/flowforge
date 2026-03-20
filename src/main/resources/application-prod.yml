@@ -11,17 +11,8 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  h2:
-    console:
-      enabled: false
-
-  devtools:
-    restart:
-      enabled: false
+        format_sql: false
 
 logging:
   level:
-    org.hibernate.SQL: debug
+    org.hibernate.SQL: warn

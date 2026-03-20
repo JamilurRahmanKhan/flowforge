@@ -1,18 +1,20 @@
-export type CurrentUser = {
+export type Project = {
   id: string;
   tenantId: string;
   name: string;
-  email: string;
-  role: string;
-  active: boolean;
+  key: string;
+  description?: string | null;
+  status: string;
+  visibility?: string | null;
+  defaultWorkflow?: string | null;
+  createdBy: string;
   createdAt: string;
-};
-
-export type UpdateProfileInput = {
-  name: string;
-};
-
-export type ChangePasswordInput = {
-  currentPassword: string;
-  newPassword: string;
+  updatedAt?: string | null;
+  memberCount?: number;
+  openTaskCount?: number;
+  progress?: number;
+  canViewProject?: boolean;
+  canManageProject?: boolean;
+  canManageMembers?: boolean;
+  canCreateTask?: boolean;
 };

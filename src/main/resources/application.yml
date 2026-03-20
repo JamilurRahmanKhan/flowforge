@@ -11,7 +11,7 @@ app:
       issuer: flowforge
       accessTokenMinutes: 15
       refreshTokenDays: 14
-      secret: "flowforge-dev-secret-key-flowforge-dev-secret-key-123456"
+      secret: ${APP_JWT_SECRET}
 
 springdoc:
   swagger-ui:
