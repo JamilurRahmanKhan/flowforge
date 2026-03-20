@@ -81,46 +81,46 @@ export default function ProjectListTabDesktop({
   const canManageProject = !!project?.canManageProject;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
         <div>
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Structured View
           </p>
-          <h2 className="mt-2 text-[34px] font-extrabold tracking-tight text-[#0f172a]">
+          <h1 className="mt-2 text-4xl sm:text-5xl font-bold tracking-tight text-slate-950">
             List
-          </h2>
+          </h1>
         </div>
 
         {canCreateTask ? (
           <button
             type="button"
             onClick={onCreateTask}
-            className="rounded-full bg-[#2563eb] px-5 py-2.5 text-[13px] font-extrabold text-white"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
           >
             + Add Task
           </button>
         ) : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="overflow-hidden rounded-[28px] border border-[#e6ebf3] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-          <div className="overflow-x-auto">
-            <div className="min-w-[1180px]">
-              <div className="grid grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-4 border-b border-[#edf2f7] bg-[#f8fafc] px-6 py-4">
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm relative">
+          <div className="overflow-x-auto scrollbar-hide scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+            <div className="min-w-[1000px] lg:min-w-[1180px]">
+              <div className="grid grid-cols-[1.8fr_0.9fr_0.9fr_1.2fr_1.5fr] lg:grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-3 lg:gap-4 border-b border-slate-200 bg-slate-50 px-4 lg:px-6 py-3 text-xs">
+                <div className="font-bold uppercase tracking-wide text-slate-500">
                   Task
                 </div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                <div className="font-bold uppercase tracking-wide text-slate-500">
                   Status
                 </div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                <div className="font-bold uppercase tracking-wide text-slate-500">
                   Priority
                 </div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                <div className="font-bold uppercase tracking-wide text-slate-500">
                   Assignee
                 </div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#94a3b8]">
+                <div className="font-bold uppercase tracking-wide text-slate-500">
                   Actions
                 </div>
               </div>
@@ -132,8 +132,8 @@ export default function ProjectListTabDesktop({
                   return (
                     <div
                       key={task.id}
-                      className={`grid grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-4 border-b border-[#edf2f7] px-6 py-5 last:border-b-0 ${
-                        activeTaskId === task.id ? "bg-[#f8fbff]" : ""
+                      className={`grid grid-cols-[1.8fr_0.9fr_0.9fr_1.2fr_1.5fr] lg:grid-cols-[2.1fr_1fr_1fr_1.4fr_1.8fr] gap-3 lg:gap-4 border-b border-slate-200 px-4 lg:px-6 py-3 lg:py-4 last:border-b-0 transition text-xs lg:text-sm ${
+                        activeTaskId === task.id ? "bg-blue-50" : "hover:bg-slate-50"
                       }`}
                     >
                       <div className="min-w-0">
@@ -142,31 +142,31 @@ export default function ProjectListTabDesktop({
                           onClick={() => onSelectTask(task.id)}
                           className="w-full text-left"
                         >
-                          <p className="truncate text-[15px] font-extrabold text-[#0f172a]">
+                          <p className="truncate font-bold text-slate-950">
                             {task.title}
                           </p>
-                          <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#64748b]">
-                            {task.description || "No description provided."}
+                          <p className="mt-1 line-clamp-1 lg:line-clamp-2 leading-relaxed text-slate-600">
+                            {task.description || "No description"}
                           </p>
                         </button>
                       </div>
 
-                      <div className="flex items-center text-[13px] font-bold text-[#334155]">
-                        {task.status}
+                      <div className="flex items-center font-medium text-slate-700 whitespace-nowrap">
+                        {task.status === "TODO" ? "To Do" : task.status === "IN_PROGRESS" ? "In Progress" : "Done"}
                       </div>
 
-                      <div className="flex items-center text-[13px] font-bold text-[#334155]">
+                      <div className="flex items-center font-medium text-slate-700 whitespace-nowrap">
                         {task.priority || "LOW"}
                       </div>
 
-                      <div className="flex items-center">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center min-w-0">
+                        <div className="flex items-center gap-1.5">
                           <div
-                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-extrabold ${assignee.tone}`}
+                            className={`flex h-6 w-6 lg:h-8 lg:w-8 flex-shrink-0 items-center justify-center rounded-full text-[10px] lg:text-xs font-bold ${assignee.tone}`}
                           >
                             {assignee.initials}
                           </div>
-                          <span className="text-[13px] font-bold text-[#334155]">
+                          <span className="font-medium text-slate-700 truncate hidden lg:inline">
                             {assignee.label}
                           </span>
                         </div>
@@ -176,7 +176,7 @@ export default function ProjectListTabDesktop({
                         <button
                           type="button"
                           onClick={() => onStatusChanged(task)}
-                          className="rounded-full bg-[#2563eb] px-3 py-1.5 text-[11px] font-extrabold text-white"
+                          className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 shadow-lg shadow-blue-600/20 whitespace-nowrap"
                         >
                           {actionLabel(task.status)}
                         </button>
@@ -186,14 +186,14 @@ export default function ProjectListTabDesktop({
                             <button
                               type="button"
                               onClick={() => onEditTask(task)}
-                              className="rounded-full border border-[#dbe4f0] px-3 py-1.5 text-[11px] font-extrabold text-[#334155]"
+                              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 whitespace-nowrap"
                             >
                               Edit
                             </button>
                             <button
                               type="button"
                               onClick={() => onDeleteTask(task)}
-                              className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-extrabold text-rose-600"
+                              className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 whitespace-nowrap"
                             >
                               Delete
                             </button>
@@ -204,7 +204,7 @@ export default function ProjectListTabDesktop({
                   );
                 })
               ) : (
-                <div className="px-6 py-12 text-center text-[14px] font-medium text-[#94a3b8]">
+                <div className="px-6 py-12 text-center text-sm font-medium text-slate-500">
                   No tasks available for this project.
                 </div>
               )}
@@ -212,16 +212,39 @@ export default function ProjectListTabDesktop({
           </div>
         </div>
 
-        <div className="xl:sticky xl:top-6 xl:self-start">
+        <div className="lg:sticky lg:top-6 lg:self-start">
           {activeTaskId ? (
             <TaskCommentsPanel taskId={activeTaskId} />
           ) : (
-            <div className="rounded-[24px] border border-dashed border-[#dbe4f0] bg-white px-5 py-10 text-center text-[14px] font-medium text-[#94a3b8]">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-12 text-center text-sm font-medium text-slate-500">
               Select a task to view and add comments.
             </div>
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        .overflow-x-auto {
+          scroll-behavior: smooth;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar {
+          height: 6px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 }

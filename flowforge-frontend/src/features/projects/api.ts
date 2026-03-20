@@ -2,11 +2,16 @@ import { apiClient } from "@/lib/api-client";
 import type {
   CreateProjectPayload,
   Project,
+  ProjectPermissions,
   UpdateProjectPayload,
 } from "./types";
 
 export async function getProjects() {
   return apiClient<Project[]>("/api/projects");
+}
+
+export async function getProjectPermissions() {
+  return apiClient<ProjectPermissions>("/api/projects/permissions");
 }
 
 export async function getProjectById(id: string) {

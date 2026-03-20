@@ -17,3 +17,23 @@ export type Project = {
   canCreateTask?: boolean;
   canManageProjectMembers?: boolean;
 };
+
+export type ProjectPermissions = {
+  canCreateProject: boolean;
+};
+
+export type CreateProjectPayload = {
+  name: string;
+  key: string;
+  description?: string | null;
+  visibility: string;
+  defaultWorkflow: string;
+};
+
+export type UpdateProjectPayload = {
+  name: string;
+  description?: string | null;
+  status?: string | null;
+  visibility?: string | null;
+  defaultWorkflow?: string | null;
+};

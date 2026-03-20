@@ -1,9 +1,10 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./data/flowforge;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    url: "jdbc:postgresql://ep-noisy-river-amffk4qw.c-5.us-east-1.aws.neon.tech:5432/neondb?sslmode=require"
+    username: "neondb_owner"
+    password: "npg_IwKdvc1ubRg2"
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,12 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: false
+
   devtools:
     restart:
       enabled: false

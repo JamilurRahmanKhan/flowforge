@@ -15,6 +15,7 @@ import {
 import {
   archiveProject,
   deleteProject,
+  getProjectPermissions,
   getProjects,
   unarchiveProject,
 } from "@/features/projects/api";
@@ -72,13 +73,20 @@ export default function ProjectsListScreen() {
   const [openCreate, setOpenCreate] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [canCreateProject, setCanCreateProject] = useState(false);
 
   async function loadProjects() {
     try {
       setLoading(true);
       setError("");
-      const data = await getProjects();
+
+      const [data, permissions] = await Promise.all([
+        getProjects(),
+        getProjectPermissions(),
+      ]);
+
       setProjects(data);
+      setCanCreateProject(!!permissions.canCreateProject);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load projects");
     } finally {
@@ -281,7 +289,7 @@ export default function ProjectsListScreen() {
                 </select>
               </div>
 
-              {projects.some((project) => project.canManageProject) ? (
+              {canCreateProject ? (
                 <button
                   type="button"
                   onClick={() => setOpenCreate(true)}

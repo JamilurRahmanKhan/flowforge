@@ -1,6 +1,7 @@
 package com.flowforge.project.controller;
 
 import com.flowforge.project.dto.CreateProjectRequest;
+import com.flowforge.project.dto.ProjectPermissionsResponse;
 import com.flowforge.project.dto.ProjectResponse;
 import com.flowforge.project.dto.UpdateProjectRequest;
 import com.flowforge.project.service.ProjectService;
@@ -23,10 +24,18 @@ public class ProjectController {
         this.projectService = projectService;
     }
 
+    @GetMapping("/permissions")
+    public ProjectPermissionsResponse getProjectPermissions(Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        return projectService.getProjectPermissions(principal);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProjectResponse createProject(@Valid @RequestBody CreateProjectRequest request,
-                                         Authentication authentication) {
+    public ProjectResponse createProject(
+            @Valid @RequestBody CreateProjectRequest request,
+            Authentication authentication
+    ) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return projectService.createProject(request, principal);
     }
@@ -44,9 +53,11 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    public ProjectResponse updateProject(@PathVariable UUID id,
-                                         @Valid @RequestBody UpdateProjectRequest request,
-                                         Authentication authentication) {
+    public ProjectResponse updateProject(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProjectRequest request,
+            Authentication authentication
+    ) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return projectService.updateProject(id, request, principal);
     }
@@ -58,16 +69,14 @@ public class ProjectController {
     }
 
     @PatchMapping("/{id}/unarchive")
-    public ProjectResponse unarchiveProject(@PathVariable UUID id,
-                                            Authentication authentication) {
+    public ProjectResponse unarchiveProject(@PathVariable UUID id, Authentication authentication) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         return projectService.unarchiveProject(id, principal);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteProject(@PathVariable UUID id,
-                              Authentication authentication) {
+    public void deleteProject(@PathVariable UUID id, Authentication authentication) {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         projectService.deleteProject(id, principal);
     }

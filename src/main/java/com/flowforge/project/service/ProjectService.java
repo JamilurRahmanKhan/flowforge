@@ -2,6 +2,7 @@ package com.flowforge.project.service;
 
 import com.flowforge.common.exception.BadRequestException;
 import com.flowforge.project.dto.CreateProjectRequest;
+import com.flowforge.project.dto.ProjectPermissionsResponse;
 import com.flowforge.project.dto.ProjectResponse;
 import com.flowforge.project.dto.UpdateProjectRequest;
 import com.flowforge.project.entity.Project;
@@ -38,6 +39,12 @@ public class ProjectService {
         this.projectMemberRepository = projectMemberRepository;
         this.taskRepository = taskRepository;
         this.workspaceAccessService = workspaceAccessService;
+    }
+
+    public ProjectPermissionsResponse getProjectPermissions(CustomUserPrincipal principal) {
+        return new ProjectPermissionsResponse(
+                workspaceAccessService.canCreateProject(principal)
+        );
     }
 
     public ProjectResponse createProject(CreateProjectRequest request, CustomUserPrincipal principal) {
