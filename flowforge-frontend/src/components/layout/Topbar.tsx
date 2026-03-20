@@ -89,6 +89,11 @@ export default function Topbar({ title }: Props) {
         return;
       }
 
+      if (workspace.workspaceSlug === activeWorkspaceSlug) {
+        setSwitcherOpen(false);
+        return;
+      }
+
       setSwitching(true);
 
       const result = await switchWorkspace(
@@ -97,8 +102,8 @@ export default function Topbar({ title }: Props) {
       );
 
       setToken(result.token);
-      setActiveWorkspaceSlug(workspace.workspaceSlug);
-      setActiveWorkspaceSlugState(workspace.workspaceSlug);
+      setActiveWorkspaceSlug(result.workspaceSlug || workspace.workspaceSlug);
+      setActiveWorkspaceSlugState(result.workspaceSlug || workspace.workspaceSlug);
       setSwitcherOpen(false);
 
       window.location.href = "/dashboard";
@@ -140,9 +145,21 @@ export default function Topbar({ title }: Props) {
             </button>
           ) : null}
 
+          <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
-              {name}
+              {userInitials}
             </div>
+            <div className="hidden md:block">
+              <p className="max-w-[140px] truncate text-[14px] font-extrabold text-slate-950">
+                {name}
+              </p>
+              {activeWorkspace ? (
+                <p className="max-w-[140px] truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  {activeWorkspace.workspaceSlug}
+                </p>
+              ) : null}
+            </div>
+          </div>
 
           <button
             type="button"

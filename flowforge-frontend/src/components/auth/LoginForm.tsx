@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AuthCard from "./AuthCard";
 import { login } from "@/features/auth/api";
 import { saveToken } from "@/lib/auth";
+import { setActiveWorkspaceSlug } from "@/lib/workspace-session";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -22,13 +23,17 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
+      const normalizedSlug = slug.trim().toLowerCase();
+
       const result = await login({
-        slug: slug.trim(),
+        slug: normalizedSlug,
         email: email.trim(),
         password,
       });
 
       saveToken(result.token);
+      setActiveWorkspaceSlug(normalizedSlug);
+
       router.push("/dashboard");
     } catch (err) {
       const message =

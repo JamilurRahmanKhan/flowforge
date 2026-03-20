@@ -17,12 +17,14 @@ import {
   Building2,
   Check,
 } from "lucide-react";
-import { clearToken } from "@/lib/auth";
+import { clearToken, getToken, setToken } from "@/lib/auth";
 import {
+  clearActiveWorkspaceSlug,
   getActiveWorkspaceSlug,
   setActiveWorkspaceSlug,
 } from "@/lib/workspace-session";
 import { getMyWorkspaces } from "@/features/workspaces/api";
+import { switchWorkspace } from "@/features/auth/api";
 import type { MyWorkspace } from "@/features/workspaces/types";
 
 type PrimaryNavItem = {
@@ -56,6 +58,7 @@ export default function MobileBottomNav() {
   const [workspaces, setWorkspaces] = useState<MyWorkspace[]>([]);
   const [activeWorkspaceSlug, setActiveWorkspaceSlugState] = useState("");
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -64,6 +67,7 @@ export default function MobileBottomNav() {
 
   function handleLogout() {
     clearToken();
+    clearActiveWorkspaceSlug();
     setOpenMore(false);
     setOpenWorkspacePicker(false);
     router.replace("/login");
@@ -84,6 +88,10 @@ export default function MobileBottomNav() {
             : fallback;
 
         setActiveWorkspaceSlugState(current);
+
+        if (current) {
+          setActiveWorkspaceSlug(current);
+        }
       } catch {
         setWorkspaces([]);
       } finally {
@@ -94,12 +102,40 @@ export default function MobileBottomNav() {
     loadWorkspaces();
   }, []);
 
-  function handleSelectWorkspace(workspace: MyWorkspace) {
-    setActiveWorkspaceSlug(workspace.workspaceSlug);
-    setActiveWorkspaceSlugState(workspace.workspaceSlug);
-    setOpenWorkspacePicker(false);
-    setOpenMore(false);
-    window.location.reload();
+  async function handleSelectWorkspace(workspace: MyWorkspace) {
+    try {
+      const token = getToken();
+      if (!token) {
+        handleLogout();
+        return;
+      }
+
+      if (workspace.workspaceSlug === activeWorkspaceSlug) {
+        setOpenWorkspacePicker(false);
+        setOpenMore(false);
+        return;
+      }
+
+      setSwitchingWorkspace(true);
+
+      const result = await switchWorkspace(
+        { workspaceSlug: workspace.workspaceSlug },
+        token
+      );
+
+      setToken(result.token);
+      setActiveWorkspaceSlug(result.workspaceSlug || workspace.workspaceSlug);
+      setActiveWorkspaceSlugState(result.workspaceSlug || workspace.workspaceSlug);
+
+      setOpenWorkspacePicker(false);
+      setOpenMore(false);
+
+      window.location.href = "/dashboard";
+    } catch {
+      handleLogout();
+    } finally {
+      setSwitchingWorkspace(false);
+    }
   }
 
   const activeWorkspace = useMemo(() => {
@@ -251,7 +287,9 @@ export default function MobileBottomNav() {
                     {activeWorkspace?.workspaceName || "Choose workspace"}
                   </p>
                   <p className="mt-1 truncate text-[12px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
-                    {activeWorkspace?.workspaceSlug || "No workspace selected"}
+                    {switchingWorkspace
+                      ? "Switching..."
+                      : activeWorkspace?.workspaceSlug || "No workspace selected"}
                   </p>
                 </div>
               </div>
@@ -278,11 +316,12 @@ export default function MobileBottomNav() {
                           key={workspace.workspaceSlug}
                           type="button"
                           onClick={() => handleSelectWorkspace(workspace)}
+                          disabled={switchingWorkspace}
                           className={`flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left transition ${
                             selected
                               ? "bg-[#eef4ff] text-[#2563eb]"
                               : "bg-white text-[#0f172a] hover:bg-[#f8fafc]"
-                          }`}
+                          } disabled:opacity-60`}
                         >
                           <div className="min-w-0">
                             <p className="truncate text-[14px] font-extrabold">
