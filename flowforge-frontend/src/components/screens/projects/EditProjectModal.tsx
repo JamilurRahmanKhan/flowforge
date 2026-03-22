@@ -54,36 +54,38 @@ export default function EditProjectModal({
 
   if (!open || !project) return null;
 
-  async function handleSubmit() {
-    setError("");
+    async function handleSubmit() {
+      if (!project) return;
 
-    if (!name.trim()) {
-      setError("Project name is required");
-      return;
+      setError("");
+
+      if (!name.trim()) {
+        setError("Project name is required");
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const updated = await updateProject(project.id, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          status: project.status,
+          visibility,
+          defaultWorkflow,
+        });
+
+        onUpdated(updated);
+        onClose();
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to update project";
+        setError(message);
+        onError?.(message);
+      } finally {
+        setLoading(false);
+      }
     }
-
-    try {
-      setLoading(true);
-
-      const updated = await updateProject(project.id, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        status: project.status,
-        visibility,
-        defaultWorkflow,
-      });
-
-      onUpdated(updated);
-      onClose();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update project";
-      setError(message);
-      onError?.(message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function handleClose() {
     if (loading) return;

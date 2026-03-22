@@ -22,9 +22,12 @@ export default function DeleteTaskModal({
   if (!open || !task) return null;
 
   async function handleDelete() {
+    const currentTask = task;
+    if (!currentTask) return;
+
     try {
       setLoading(true);
-      await deleteTask(task.id);
+      await deleteTask(currentTask.id);
       await onDeleted();
       onClose();
     } finally {

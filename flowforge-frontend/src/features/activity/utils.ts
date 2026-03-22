@@ -17,7 +17,14 @@ export function buildProjectActivity(
     type: "PROJECT_CREATED",
     title: "Project created",
     description: `${project.name} was created with key ${project.key}.`,
-    timestamp: toIsoOrFallback(project.createdAt),
+    createdAt: toIsoOrFallback(project.createdAt),
+    projectId: project.id,
+    projectName: project.name,
+    taskId: null,
+    taskTitle: null,
+    userId: project.createdBy,
+    userName: null,
+    actorName: null,
   });
 
   items.push({
@@ -31,7 +38,14 @@ export function buildProjectActivity(
       project.status === "ARCHIVED"
         ? `${project.name} is currently archived.`
         : `${project.name} is currently active.`,
-    timestamp: toIsoOrFallback(project.createdAt),
+    createdAt: toIsoOrFallback(project.updatedAt || project.createdAt),
+    projectId: project.id,
+    projectName: project.name,
+    taskId: null,
+    taskTitle: null,
+    userId: project.createdBy,
+    userName: null,
+    actorName: null,
   });
 
   if (project.description) {
@@ -39,8 +53,16 @@ export function buildProjectActivity(
       id: `project-updated-${project.id}`,
       type: "PROJECT_UPDATED",
       title: "Project details available",
-      description: `Project description and workflow information have been configured.`,
-      timestamp: toIsoOrFallback(project.createdAt),
+      description:
+        "Project description and workflow information have been configured.",
+      createdAt: toIsoOrFallback(project.updatedAt || project.createdAt),
+      projectId: project.id,
+      projectName: project.name,
+      taskId: null,
+      taskTitle: null,
+      userId: project.createdBy,
+      userName: null,
+      actorName: null,
     });
   }
 
@@ -52,13 +74,20 @@ export function buildProjectActivity(
       description: `Status: ${task.status} • Priority: ${task.priority}${
         task.dueDate ? ` • Due: ${new Date(task.dueDate).toLocaleDateString()}` : ""
       }`,
-      timestamp: toIsoOrFallback(task.createdAt),
+      createdAt: toIsoOrFallback(task.createdAt),
+      projectId: task.projectId,
+      projectName: project.name,
+      taskId: task.id,
+      taskTitle: task.title,
+      userId: task.createdBy,
+      userName: null,
+      actorName: null,
     });
   }
 
   return items.sort((a, b) => {
-    const aTime = new Date(a.timestamp).getTime();
-    const bTime = new Date(b.timestamp).getTime();
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
     return bTime - aTime;
   });
 }

@@ -13,9 +13,11 @@ export type Project = {
   memberCount?: number;
   openTaskCount?: number;
   progress?: number;
+  canViewProject?: boolean;
   canManageProject?: boolean;
-  canCreateTask?: boolean;
+  canManageMembers?: boolean;
   canManageProjectMembers?: boolean;
+  canCreateTask?: boolean;
 };
 
 export type ProjectPermissions = {

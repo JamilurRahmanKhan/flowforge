@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, Menu } from "lucide-react";
 import { clearToken, getToken, setToken } from "@/lib/auth";
 import {
   clearActiveWorkspaceSlug,
@@ -16,6 +16,7 @@ import WorkspaceSwitcherModal from "./WorkspaceSwitcherModal";
 
 type Props = {
   title?: string;
+  onOpenMobileMenu?: () => void;
 };
 
 function initials(name: string) {
@@ -27,7 +28,7 @@ function initials(name: string) {
     .join("");
 }
 
-export default function Topbar({ title }: Props) {
+export default function Topbar({ title, onOpenMobileMenu }: Props) {
   const [name, setName] = useState("User");
   const [workspaces, setWorkspaces] = useState<MyWorkspace[]>([]);
   const [activeWorkspaceSlug, setActiveWorkspaceSlugState] = useState("");
@@ -117,13 +118,24 @@ export default function Topbar({ title }: Props) {
   return (
     <>
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/60 bg-white/90 px-4 py-4 backdrop-blur-md sm:px-6">
-        <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight text-slate-950 sm:text-3xl">
-            {title || "FlowForge"}
-          </h1>
-          <p className="hidden text-xs font-medium text-slate-500 sm:block">
-            Premium workspace operations
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 md:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="min-w-0">
+            <h1 className="truncate text-[28px] font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+              {title || "FlowForge"}
+            </h1>
+            <p className="hidden text-xs font-medium text-slate-500 sm:block">
+              Premium workspace operations
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

@@ -657,11 +657,12 @@ export default function ProjectOverviewScreen({ id }: { id: string }) {
         }}
       />
 
-      <CreateTaskModal
-        open={openCreateTask}
-        projectId={project.id}
-        onClose={() => setOpenCreateTask(false)}
-        onCreated={(task) => {
+            <CreateTaskModal
+              open={openCreateTask}
+              projectId={project.id}
+              members={[]}
+              onClose={() => setOpenCreateTask(false)}
+              onCreated={(task) => {
           setTasks((prev) => [task, ...prev]);
           setOpenCreateTask(false);
           setActiveTab("overview");

@@ -17,7 +17,8 @@ import type { CurrentUser } from "@/features/profile/types";
 import { getMyTasks } from "@/features/tasks/api";
 import type { Task } from "@/features/tasks/types";
 
-function formatDate(value: string) {
+function formatDate(value?: string | null) {
+  if (!value) return "Unknown";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Unknown";
   return date.toLocaleDateString();
