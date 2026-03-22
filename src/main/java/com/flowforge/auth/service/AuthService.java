@@ -94,6 +94,18 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
+        if (request.getSlug() == null || request.getSlug().isBlank()) {
+            throw new BadRequestException("Workspace slug is required");
+        }
+
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new BadRequestException("Email is required");
+        }
+
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new BadRequestException("Password is required");
+        }
+
         String normalizedSlug = request.getSlug().trim().toLowerCase();
         String normalizedEmail = request.getEmail().trim().toLowerCase();
 

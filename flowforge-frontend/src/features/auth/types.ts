@@ -1,20 +1,21 @@
-export type LoginRequest = {
+export type LoginPayload = {
+  slug: string;
   email: string;
   password: string;
-  organizationSlug: string;
 };
 
-export type LoginResponse = {
-  accessToken: string;
+export type AuthResponse = {
+  token: string;
+  tokenType: string;
   userId: string;
   tenantId: string;
   email: string;
   role: string;
 };
 
-export type RegisterRequest = {
+export type RegisterPayload = {
   organizationName: string;
-  organizationSlug: string;
+  slug: string;
   ownerName: string;
   ownerEmail: string;
   password: string;
@@ -23,7 +24,23 @@ export type RegisterRequest = {
 export type RegisterResponse = {
   organizationId: string;
   organizationName: string;
-  organizationSlug: string;
+  slug: string;
   ownerId: string;
   ownerEmail: string;
+  message: string;
+};
+
+export type SwitchWorkspacePayload = {
+  workspaceSlug: string;
+};
+
+export type SwitchWorkspaceResponse = {
+  token: string;
+  tokenType: string;
+  userId: string;
+  tenantId: string;
+  email: string;
+  role: string;
+  workspaceSlug: string;
+  workspaceName: string;
 };

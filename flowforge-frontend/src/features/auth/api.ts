@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export type LoginPayload = {
   slug: string;
@@ -20,6 +21,7 @@ export type SwitchWorkspacePayload = {
 
 export type AuthResponse = {
   token: string;
+  tokenType?: string;
   userId: string;
   tenantId: string;
   email: string;
@@ -44,6 +46,7 @@ type RawLoginResponse = {
 type RawRegisterResponse = {
   organizationId?: string;
   organizationName?: string;
+  slug?: string;
   organizationSlug?: string;
   ownerId?: string;
   ownerEmail?: string;
@@ -90,6 +93,7 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 
   return {
     token: data.accessToken,
+    tokenType: data.tokenType,
     userId: data.userId,
     tenantId: data.tenantId,
     email: data.email,
@@ -127,7 +131,7 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
     role: "",
     organizationId: data.organizationId,
     organizationName: data.organizationName,
-    organizationSlug: data.organizationSlug,
+    organizationSlug: data.organizationSlug || data.slug,
     message: data.message || "Workspace created successfully",
   };
 }
@@ -160,6 +164,7 @@ export async function switchWorkspace(
 
   return {
     token: data.accessToken,
+    tokenType: data.tokenType,
     userId: data.userId,
     tenantId: data.tenantId,
     email: data.email,

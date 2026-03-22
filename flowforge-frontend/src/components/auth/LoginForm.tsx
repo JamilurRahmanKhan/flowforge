@@ -27,7 +27,7 @@ export default function LoginForm() {
 
       const result = await login({
         slug: normalizedSlug,
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
