@@ -59,6 +59,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
+                "https://flowforge-collaboration.vercel.app",
                 "https://flowforge-xi-inky.vercel.app",
                 "https://flowforge-eow3kq55x-jamilurrahmankhan32-gmailcoms-projects.vercel.app"
         ));
